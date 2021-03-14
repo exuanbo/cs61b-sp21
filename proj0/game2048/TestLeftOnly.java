@@ -2,15 +2,15 @@ package game2048;
 
 import org.junit.Test;
 
-/** Tests the tilt() method in the up (Side.NORTH) direction only.
+/** Tests the tilt() method in the left (Side.WEST) direction only.
  *
- * @author Omar Khan
+ * @author Exuanbo
  */
 public class TestLeftOnly extends TestUtils {
 
 
     @Test
-    /** Move tiles up (no merging). */
+    /** Move tiles left (no merging). */
     public void testLeftNoMerge() {
         int[][] before = new int[][] {
                 {0, 0, 2, 0},
@@ -81,10 +81,8 @@ public class TestLeftOnly extends TestUtils {
     @Test
     /** A tricky merge.
      *
-     * The tricky part here is that the 4 tile on the bottom row shouldn't
-     * merge with the newly created 4 tile on the top row. If you're failing
-     * this test, try seeing how you can ensure that the bottom 4 tile doesn't
-     * merge with the newly created 4 tile on top.*/
+     * The tricky part here is that the 4 tile on the rightmost row shouldn't
+     * merge with the newly created 4 tile on the leftmost row.*/
     public void testLeftTrickyMerge() {
         int[][] before = new int[][] {
                 {0, 0, 0, 0},

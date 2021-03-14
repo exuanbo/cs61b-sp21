@@ -1,7 +1,6 @@
 package game2048;
 
 import java.util.*;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 /** The state of a game of 2048.
@@ -110,26 +109,21 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        boolean isLineVertical = side == Side.NORTH || side == Side.SOUTH;
-        boolean isLineIncreasing = side == Side.NORTH || side == Side.EAST;
         HashSet<Tile> changedTiles = new HashSet<>();
-        int initialOuter = isLineIncreasing ? board.size() - 1 : 0;
-        int outerBorder = isLineIncreasing ? -1 : board.size();
-        IntFunction<Integer> nextOuter = (int outer) -> isLineIncreasing ? outer - 1 : outer + 1;
-        for (int outer = initialOuter; outer != outerBorder; outer = nextOuter.apply(outer)) {
-            for (int inner = 0; inner < board.size(); inner++) {
-                int col = isLineVertical ? inner : outer;
-                int row = isLineVertical ? outer : inner;
+        board.setViewingPerspective(side);
+        for (int row = board.size() - 2; row >= 0; row--) {
+            for (int col = 0; col < board.size(); col++) {
                 Tile tile = board.tile(col, row);
                 if (tile == null) {
                     continue;
                 }
-                boolean isChanged = moveTile(tile, isLineVertical, isLineIncreasing, changedTiles);
+                boolean isChanged = moveTileUp(col, row, tile, changedTiles);
                 if (isChanged) {
                     changed = true;
                 }
             }
         }
+        board.setViewingPerspective(Side.NORTH);
 
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
@@ -141,48 +135,42 @@ public class Model extends Observable {
         return changed;
     }
 
-    private boolean moveTile(Tile tile, boolean isLineVertical, boolean isLineIncreasing, Set<Tile> changedTiles) {
-        int currentLine = isLineVertical ? tile.row() : tile.col();
-        int farthermostLine = isLineIncreasing ? board.size() - 1 : 0;
-        if (currentLine == farthermostLine) {
-            return false;
-        }
-        int targetCol;
+    private boolean moveTileUp(int col, int row, Tile tile, Set<Tile> changedTiles) {
         int targetRow;
-        Tile nearestTile = findNearestTile(tile, isLineVertical, isLineIncreasing);
-        if (nearestTile == null) {
-            targetCol = isLineVertical ? tile.col() : farthermostLine;
-            targetRow = isLineVertical ? farthermostLine : tile.row();
-        } else if (tile.value() == nearestTile.value() && !changedTiles.contains(nearestTile)) {
-            targetCol = isLineVertical ? tile.col() : nearestTile.col();
-            targetRow = isLineVertical ? nearestTile.row() : tile.row();
-        } else if ((isLineVertical ? nearestTile.row() : nearestTile.col()) == (isLineVertical ? tile.row() : tile.col()) + (isLineIncreasing ? 1 : -1)) {
+        CoordinateWithTile nearest = findNearestTileAbove(col, row);
+        if (nearest == null) {
+            targetRow = board.size() - 1;
+        } else if (tile.value() == nearest.tile.value() && !changedTiles.contains(nearest.tile)) {
+            targetRow = nearest.row;
+        } else if (nearest.row == row + 1) {
             return false;
         } else {
-            targetCol = isLineVertical ? tile.col() : nearestTile.col() - (isLineIncreasing ? 1 : -1);
-            targetRow = isLineVertical ? nearestTile.row() - (isLineIncreasing ? 1 : -1) : tile.row();
+            targetRow = nearest.row - 1;
         }
-        boolean isMerged = board.move(targetCol, targetRow, tile);
+        boolean isMerged = board.move(col, targetRow, tile);
         if (isMerged) {
             score += tile.next().value();
-            changedTiles.add(board.tile(targetCol, targetRow));
+            changedTiles.add(board.tile(col, targetRow));
         }
         return true;
     }
 
-    private Tile findNearestTile(Tile tile, boolean isLineVertical, boolean isLineIncreasing) {
-        int initialLine = (isLineVertical ? tile.row() : tile.col()) + (isLineIncreasing ? 1 : -1);
-        int lineBorder = isLineIncreasing ? board.size() : -1;
-        IntFunction<Integer> nextLine = (int line) -> isLineIncreasing ? line + 1 : line - 1;
-        for (int line = initialLine; line != lineBorder; line = nextLine.apply(line)) {
-            int currentCol = isLineVertical ? tile.col() : line;
-            int currentRow = isLineVertical ? line : tile.row();
-            Tile currentTile = board.tile(currentCol, currentRow);
-            if (currentTile != null) {
-                return currentTile;
+    private CoordinateWithTile findNearestTileAbove(int col, int row) {
+        for (int currentRow = row + 1; currentRow < board.size(); currentRow++) {
+            Tile tile = board.tile(col, currentRow);
+            if (tile != null) {
+                return new CoordinateWithTile(col, currentRow, tile);
             }
         }
         return null;
+    }
+
+    private static class CoordinateWithTile extends Coordinate {
+        Tile tile;
+        public CoordinateWithTile(int c, int r, Tile t) {
+            super(c, r);
+            tile = t;
+        }
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -224,10 +212,8 @@ public class Model extends Observable {
             return true;
         }
         Predicate<Tile> hasAdjacentTileWithSameValue = (Tile tile) -> {
-            for (int[] adjacentCoordinate : getAdjacentCoordinates(tile.col(), tile.row(), b)) {
-                int adjacentCol = adjacentCoordinate[0];
-                int adjacentRow = adjacentCoordinate[1];
-                Tile adjacentTile = b.tile(adjacentCol, adjacentRow);
+            for (Coordinate coordinate : getAdjacentCoordinates(tile, b)) {
+                Tile adjacentTile = b.tile(coordinate.col, coordinate.row);
                 if (tile.value() == adjacentTile.value()) {
                     return true;
                 }
@@ -237,18 +223,37 @@ public class Model extends Observable {
         return TileUtils.some(hasAdjacentTileWithSameValue, b);
     }
 
-    private static int[][] getAdjacentCoordinates(int col, int row, Board b) {
-        int[][] coordinates = new int[][] {
+    private static Coordinate[] getAdjacentCoordinates(Tile tile, Board b) {
+        int col = tile.col();
+        int row = tile.row();
+        Coordinate[] coordinates = Coordinate.of(new int[][]{
             {col, row + 1}, {col + 1, row},
             {col, row - 1}, {col - 1, row}
-        };
-        return Arrays.stream(coordinates).filter(coordinate -> isValidCoordinate(coordinate, b)).toArray(int[][]::new);
+        });
+        return Arrays.stream(coordinates).filter(coordinate -> isValidCoordinate(coordinate, b)).toArray(Coordinate[]::new);
     }
 
-    private static boolean isValidCoordinate(int[] coordinate, Board b) {
-        int col = coordinate[0];
-        int row = coordinate[1];
+    private static boolean isValidCoordinate(Coordinate coordinate, Board b) {
+        int col = coordinate.col;
+        int row = coordinate.row;
         return col >= 0 && col < b.size() && row >= 0 && row < b.size();
+    }
+
+    private static class Coordinate {
+        int col;
+        int row;
+        public Coordinate(int c, int r) {
+            col = c;
+            row = r;
+        }
+        public static Coordinate[] of(int[][] values) {
+            Coordinate[] coordinates = new Coordinate[values.length];
+            for (int i = 0; i < values.length; i++) {
+                int[] coordinate = values[i];
+                coordinates[i] = new Coordinate(coordinate[0], coordinate[1]);
+            }
+            return coordinates;
+        }
     }
 
     private static class TileUtils {

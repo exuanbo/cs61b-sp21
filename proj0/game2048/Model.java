@@ -109,7 +109,7 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        HashSet<Tile> changedTiles = new HashSet<>();
+        Set<Tile> changedTiles = new HashSet<>();
         board.setViewingPerspective(side);
         for (int row = board.size() - 2; row >= 0; row--) {
             for (int col = 0; col < board.size(); col++) {
@@ -117,7 +117,8 @@ public class Model extends Observable {
                 if (tile == null) {
                     continue;
                 }
-                boolean isChanged = moveTileUp(col, row, tile, changedTiles);
+                VTile vTile = new VTile(new Coordinate(col, row), tile);
+                boolean isChanged = moveTileUp(vTile, changedTiles);
                 if (isChanged) {
                     changed = true;
                 }
@@ -135,41 +136,44 @@ public class Model extends Observable {
         return changed;
     }
 
-    private boolean moveTileUp(int col, int row, Tile tile, Set<Tile> changedTiles) {
+    private boolean moveTileUp(VTile vTile, Set<Tile> changedTiles) {
         int targetRow;
-        CoordinateWithTile nearest = findNearestTileAbove(col, row);
+        VTile nearest = findNearestTileAbove(vTile);
         if (nearest == null) {
             targetRow = board.size() - 1;
-        } else if (tile.value() == nearest.tile.value() && !changedTiles.contains(nearest.tile)) {
+        } else if (vTile.actualTile.value() == nearest.actualTile.value() && !changedTiles.contains(nearest.actualTile)) {
             targetRow = nearest.row;
-        } else if (nearest.row == row + 1) {
+        } else if (nearest.row == vTile.row + 1) {
             return false;
         } else {
             targetRow = nearest.row - 1;
         }
-        boolean isMerged = board.move(col, targetRow, tile);
+        boolean isMerged = board.move(vTile.col, targetRow, vTile.actualTile);
         if (isMerged) {
-            score += tile.next().value();
-            changedTiles.add(board.tile(col, targetRow));
+            score += vTile.actualTile.next().value();
+            changedTiles.add(board.tile(vTile.col, targetRow));
         }
         return true;
     }
 
-    private CoordinateWithTile findNearestTileAbove(int col, int row) {
-        for (int currentRow = row + 1; currentRow < board.size(); currentRow++) {
-            Tile tile = board.tile(col, currentRow);
-            if (tile != null) {
-                return new CoordinateWithTile(col, currentRow, tile);
+    private VTile findNearestTileAbove(VTile vTile) {
+        for (int row = vTile.row + 1; row < board.size(); row++) {
+            Tile actualTile = board.tile(vTile.col, row);
+            if (actualTile != null) {
+                return new VTile(new Coordinate(vTile.col, row), actualTile);
             }
         }
         return null;
     }
 
-    private static class CoordinateWithTile extends Coordinate {
-        Tile tile;
-        public CoordinateWithTile(int c, int r, Tile t) {
-            super(c, r);
-            tile = t;
+    private static class VTile {
+        int col;
+        int row;
+        Tile actualTile;
+        public VTile(Coordinate c, Tile t) {
+            col = c.col;
+            row = c.row;
+            actualTile = t;
         }
     }
 

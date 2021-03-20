@@ -1,7 +1,5 @@
 package deque;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Iterable<T> {
@@ -122,7 +120,6 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     @Override
-    @NonNull
     public Iterator<T> iterator() {
         return new LinkedListDequeIterator();
     }

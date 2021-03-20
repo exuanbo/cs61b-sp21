@@ -161,4 +161,20 @@ public class LinkedListDequeTest {
             i += 1;
         }
     }
+
+    @Test
+    public void equalsTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        LinkedListDeque<Integer> lld2 = new LinkedListDeque<>();
+
+        lld1.addLast(0);
+        lld2.addLast(0);
+        assertEquals(lld1, lld2);
+
+        lld1.addLast(1);
+        assertNotEquals(lld1, lld2);
+
+        lld2.addLast(2);
+        assertNotEquals(lld1, lld2);
+    }
 }

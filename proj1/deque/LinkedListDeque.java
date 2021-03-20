@@ -19,43 +19,38 @@ public class LinkedListDeque<T> implements Iterable<T> {
         @Override
         public String toString() {
             if (item == null) {
-                return prev == null ? "HEAD" : next == null ? "TAIL" : "null";
+                return "null";
             }
             return item.toString();
         }
     }
 
     private final Node<T> head;
-    private final Node<T> tail;
     private int size;
 
     public LinkedListDeque() {
         head = new Node<>(null, null, null);
-        tail = new Node<>(null, head, null);
-        head.next = tail;
+        head.next = head;
+        head.prev = head;
         size = 0;
     }
 
     public LinkedListDeque(T item) {
         head = new Node<>(null, null, null);
-        head.next = new Node<>(item, head, null);
-        tail = new Node<>(null, head.next, null);
-        head.next.next = tail;
+        head.next = new Node<>(item, head, head);
+        head.prev = head.next;
         size = 1;
     }
 
     public void addFirst(T item) {
         head.next = new Node<>(item, head, head.next);
-        head.next.next.prev = head.next;
-        if (tail.prev == head) {
-            tail.prev = head.next;
-        }
+        head.prev = head.next;
         size += 1;
     }
 
     public void addLast(T item) {
-        tail.prev.next = new Node<>(item, tail.prev, tail);
-        tail.prev = tail.prev.next;
+        head.prev = new Node<>(item, head.prev, head);
+        head.prev.prev.next = head.prev;
         size += 1;
     }
 
@@ -70,7 +65,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
     public void printDeque() {
         String[] items = new String[size];
         Node<T> p = head.next;
-        if (p == tail) {
+        if (p == head) {
             return;
         }
         for (int i = 0; i < size; i++) {
@@ -81,7 +76,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     public T removeFirst() {
-        if (head.next == tail) {
+        if (head.next == head) {
             return null;
         }
         T item = head.next.item;
@@ -91,12 +86,12 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     public T removeLast() {
-        if (tail.prev == head) {
+        if (head.prev == head) {
             return null;
         }
-        T item = tail.prev.item;
-        tail.prev.prev.next = tail;
-        tail.prev = tail.prev.prev;
+        T item = head.prev.item;
+        head.prev.prev.next = head;
+        head.prev = head.prev.prev;
         size -= 1;
         return item;
     }
@@ -117,7 +112,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     private T getRecursiveHelper(int index, Node<T> p) {
-        if (p == tail) {
+        if (p == head) {
             return null;
         }
         if (index == 0) {
@@ -140,7 +135,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
         }
 
         public boolean hasNext() {
-            return p == tail;
+            return p == head;
         }
 
         public T next() {

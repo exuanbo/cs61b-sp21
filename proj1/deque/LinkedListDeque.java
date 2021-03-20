@@ -131,10 +131,12 @@ public class LinkedListDeque<T> implements Iterable<T> {
             p = head.next;
         }
 
+        @Override
         public boolean hasNext() {
             return p == head;
         }
 
+        @Override
         public T next() {
             T item = p.item;
             p = p.next;

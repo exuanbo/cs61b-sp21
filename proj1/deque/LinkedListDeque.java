@@ -74,7 +74,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     public T removeFirst() {
-        if (head.next == head) {
+        if (isEmpty()) {
             return null;
         }
         T item = head.next.item;
@@ -84,7 +84,7 @@ public class LinkedListDeque<T> implements Iterable<T> {
     }
 
     public T removeLast() {
-        if (head.prev == head) {
+        if (isEmpty()) {
             return null;
         }
         T item = head.prev.item;

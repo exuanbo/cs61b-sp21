@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import static java.lang.Math.abs;
 
-public class ArrayDeque<T> implements Iterable<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private T[] items;
     private int size;
     private int nextFirst;

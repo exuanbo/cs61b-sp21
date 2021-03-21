@@ -4,11 +4,11 @@ import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Deque<T> {
     private static class Node<N> {
-        public N item;
-        public Node<N> prev;
-        public Node<N> next;
+        private final N item;
+        private Node<N> prev;
+        private Node<N> next;
 
-        public Node(N i, Node<N> p, Node<N> n) {
+        Node(N i, Node<N> p, Node<N> n) {
             item = i;
             prev = p;
             next = n;
@@ -127,7 +127,7 @@ public class LinkedListDeque<T> implements Deque<T> {
     private class LinkedListDequeIterator implements Iterator<T> {
         private Node<T> p;
 
-        public LinkedListDequeIterator() {
+        LinkedListDequeIterator() {
             p = head.next;
         }
 

@@ -12,4 +12,3 @@ public class TimeArrayDeque {
         Timing.addFirst(arrayDeque);
     }
 }
-

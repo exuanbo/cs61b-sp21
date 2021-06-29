@@ -3,26 +3,6 @@ package deque;
 import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Deque<T> {
-    private static class Node<N> {
-        private final N item;
-        private Node<N> prev;
-        private Node<N> next;
-
-        Node(N i, Node<N> p, Node<N> n) {
-            item = i;
-            prev = p;
-            next = n;
-        }
-
-        @Override
-        public String toString() {
-            if (item == null) {
-                return "null";
-            }
-            return item.toString();
-        }
-    }
-
     private final Node<T> head;
     private int size;
 
@@ -124,6 +104,43 @@ public class LinkedListDeque<T> implements Deque<T> {
         return new LinkedListDequeIterator();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof LinkedListDeque)) {
+            return false;
+        }
+        LinkedListDeque<?> lld = (LinkedListDeque<?>) o;
+        if (lld.size() != size) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (lld.get(i) != get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static class Node<N> {
+        private final N item;
+        private Node<N> prev;
+        private Node<N> next;
+
+        Node(N i, Node<N> p, Node<N> n) {
+            item = i;
+            prev = p;
+            next = n;
+        }
+
+        @Override
+        public String toString() {
+            if (item == null) {
+                return "null";
+            }
+            return item.toString();
+        }
+    }
+
     private class LinkedListDequeIterator implements Iterator<T> {
         private Node<T> p;
 
@@ -142,22 +159,5 @@ public class LinkedListDeque<T> implements Deque<T> {
             p = p.next;
             return item;
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof LinkedListDeque)) {
-            return false;
-        }
-        LinkedListDeque<?> lld = (LinkedListDeque<?>) o;
-        if (lld.size() != size) {
-            return false;
-        }
-        for (int i = 0; i < size; i++) {
-            if (lld.get(i) != get(i)) {
-                return false;
-            }
-        }
-        return true;
     }
 }

@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 
-import static java.lang.Math.abs;
-
 public class ArrayDeque<T> implements Deque<T> {
     private T[] items;
     private int size;
@@ -94,7 +92,7 @@ public class ArrayDeque<T> implements Deque<T> {
     @SuppressWarnings("unchecked")
     private void resize(int s) {
         T[] newItems = (T[]) new Object[s];
-        int firstPos = abs(s - size) / 2;
+        int firstPos = Math.abs(s - size) / 2;
         System.arraycopy(items, nextFirst + 1, newItems, firstPos, size);
         items = newItems;
         nextFirst = firstPos - 1;

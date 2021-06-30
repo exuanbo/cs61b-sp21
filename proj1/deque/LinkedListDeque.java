@@ -95,7 +95,6 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         return getRecursiveHelper(index - 1, p.next);
     }
 
-    @Override
     public Iterator<T> iterator() {
         return new LinkedListDequeIterator();
     }
@@ -144,12 +143,10 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             p = head.next;
         }
 
-        @Override
         public boolean hasNext() {
             return p == head;
         }
 
-        @Override
         public T next() {
             T item = p.item;
             p = p.next;

@@ -103,7 +103,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         return items[itemIndex];
     }
 
-    @Override
     public Iterator<T> iterator() {
         return new ArrayDequeIterator();
     }
@@ -132,12 +131,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             index = 0;
         }
 
-        @Override
         public boolean hasNext() {
             return index < size;
         }
 
-        @Override
         public T next() {
             T item = get(index);
             index += 1;

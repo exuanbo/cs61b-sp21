@@ -3,18 +3,16 @@ package deque;
 import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
-    private final Node<T> head;
+    private final Node<T> head = new Node<>(null, null, null);
     private int size;
 
     public LinkedListDeque() {
-        head = new Node<>(null, null, null);
         head.next = head;
         head.prev = head;
         size = 0;
     }
 
     public LinkedListDeque(T item) {
-        head = new Node<>(null, null, null);
         head.next = new Node<>(item, head, head);
         head.prev = head.next;
         size = 1;
@@ -22,7 +20,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     public void addFirst(T item) {
         head.next = new Node<>(item, head, head.next);
-        head.prev = head.next;
+        head.next.next.prev = head.next;
         size += 1;
     }
 
@@ -55,6 +53,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         }
         T item = head.next.item;
         head.next = head.next.next;
+        head.next.prev = head;
         size -= 1;
         return item;
     }
@@ -64,8 +63,8 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             return null;
         }
         T item = head.prev.item;
-        head.prev.prev.next = head;
         head.prev = head.prev.prev;
+        head.prev.next = head;
         size -= 1;
         return item;
     }

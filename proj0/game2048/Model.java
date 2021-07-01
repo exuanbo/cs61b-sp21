@@ -118,8 +118,8 @@ public class Model extends Observable {
                     continue;
                 }
                 VTile vTile = new VTile(new Coordinate(col, row), tile);
-                boolean isChanged = moveTileUp(vTile, changedTiles);
-                if (isChanged) {
+                boolean isChangedAfterMove = moveTileUp(vTile, changedTiles);
+                if (isChangedAfterMove) {
                     changed = true;
                 }
             }

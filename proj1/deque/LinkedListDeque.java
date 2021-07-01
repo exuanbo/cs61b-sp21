@@ -73,22 +73,22 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (index < 0 || index > size - 1) {
             return null;
         }
-        Node<T> p;
+        Node<T> currentNode;
         if (index < size / 2) {
-            p = head.next;
+            currentNode = head.next;
             for (int i = 0; i < size; i++) {
                 if (i == index) {
-                    return p.item;
+                    return currentNode.item;
                 }
-                p = p.next;
+                currentNode = currentNode.next;
             }
         } else {
-            p = head.prev;
+            currentNode = head.prev;
             for (int i = size - 1; i >= 0; i--) {
                 if (i == index) {
-                    return p.item;
+                    return currentNode.item;
                 }
-                p = p.prev;
+                currentNode = currentNode.prev;
             }
         }
         throw new AssertionError();
@@ -101,11 +101,11 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         return getRecursiveHelper(index, head.next);
     }
 
-    private T getRecursiveHelper(int index, Node<T> p) {
+    private T getRecursiveHelper(int index, Node<T> currentNode) {
         if (index == 0) {
-            return p.item;
+            return currentNode.item;
         }
-        return getRecursiveHelper(index - 1, p.next);
+        return getRecursiveHelper(index - 1, currentNode.next);
     }
 
     public Iterator<T> iterator() {

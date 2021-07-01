@@ -5,22 +5,19 @@ import java.util.Iterator;
 import java.util.Objects;
 
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
-    private T[] items;
+    @SuppressWarnings("unchecked")
+    private T[] items = (T[]) new Object[8];
     private int size;
     private int nextFirst;
     private int nextLast;
 
-    @SuppressWarnings("unchecked")
     public ArrayDeque() {
-        items = (T[]) new Object[8];
         size = 0;
         nextFirst = 3;
         nextLast = 4;
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayDeque(T item) {
-        items = (T[]) new Object[8];
         items[3] = item;
         size = 1;
         nextFirst = 2;

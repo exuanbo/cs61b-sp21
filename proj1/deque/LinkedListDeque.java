@@ -70,6 +70,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T get(int index) {
+        if (index < 0 || index > size - 1) {
+            return null;
+        }
         Node<T> p = head.next;
         for (int i = 0; i < size; i++) {
             if (i == index) {
@@ -77,17 +80,17 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             }
             p = p.next;
         }
-        return null;
+        throw new AssertionError();
     }
 
     public T getRecursive(int index) {
+        if (index < 0 || index > size - 1) {
+            return null;
+        }
         return getRecursiveHelper(index, head.next);
     }
 
     private T getRecursiveHelper(int index, Node<T> p) {
-        if (p == head) {
-            return null;
-        }
         if (index == 0) {
             return p.item;
         }

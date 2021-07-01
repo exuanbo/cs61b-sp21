@@ -133,6 +133,8 @@ public class LinkedListDequeTest {
         for (int i = 0; i < 1000; i++) {
             assertEquals("Should have same value", i, (int) lld1.get(i));
         }
+
+        assertNull("Should be null when index out of bound", lld1.get(1000));
     }
 
     @Test

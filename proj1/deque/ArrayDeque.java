@@ -93,10 +93,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T get(int index) {
-        int itemIndex = nextFirst + 1 + index;
-        if (itemIndex > items.length) {
+        if (index < 0 || index > size - 1) {
             return null;
         }
+        int itemIndex = nextFirst + 1 + index;
         return items[itemIndex];
     }
 

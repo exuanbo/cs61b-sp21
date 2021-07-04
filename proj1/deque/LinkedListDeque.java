@@ -73,23 +73,12 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (index < 0 || index > size - 1) {
             return null;
         }
-        Node<T> currentNode;
-        if (index < size / 2) {
-            currentNode = head.next;
-            for (int i = 0; i < size; i++) {
-                if (i == index) {
-                    return currentNode.item;
-                }
-                currentNode = currentNode.next;
+        Node<T> currentNode = head.next;
+        for (int i = 0; i < size; i++) {
+            if (i == index) {
+                return currentNode.item;
             }
-        } else {
-            currentNode = head.prev;
-            for (int i = size - 1; i >= 0; i--) {
-                if (i == index) {
-                    return currentNode.item;
-                }
-                currentNode = currentNode.prev;
-            }
+            currentNode = currentNode.next;
         }
         throw new AssertionError();
     }

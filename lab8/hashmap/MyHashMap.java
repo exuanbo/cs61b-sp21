@@ -118,12 +118,8 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
     private Node getNode(K key) {
-        return getNode(key, buckets);
-    }
-
-    private Node getNode(K key, Collection<Node>[] table) {
-        int bucketIndex = getIndex(key, table);
-        for (Node node : table[bucketIndex]) {
+        int bucketIndex = getIndex(key, buckets);
+        for (Node node : buckets[bucketIndex]) {
             if (node.key.equals(key)) {
                 return node;
             }

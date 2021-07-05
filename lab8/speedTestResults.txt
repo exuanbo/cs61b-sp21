@@ -1,0 +1,18 @@
+ This program inserts random Strings of length L
+ Into different types of maps as <String, Integer> pairs.
+
+What would you like L to be?: 5
+
+Enter # strings to insert into your hashmap.MyHashMap: 10000000
+class hashmap.MyHashMap: 7.58 sec
+
+Enter # strings to insert into Java's HashMap: 10000000
+Java's Built-in HashMap: 4.07 sec
+
+ This program inserts lexicographically increasing Stringsinto Maps as <String, Integer> pairs.
+
+Enter # strings to insert into hashmap.MyHashMap: 10000000
+class hashmap.MyHashMap: 6.08 sec
+
+Enter # strings to insert into Java's HashMap: 10000000
+Java's Built-in HashMap: 3.50 sec

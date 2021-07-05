@@ -141,15 +141,11 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             node.value = value;
             return;
         }
-        put(key, value, buckets);
+        put(createNode(key, value), buckets);
         size += 1;
         if (hasReachedMaxLoad()) {
             resize(buckets.length * 2);
         }
-    }
-
-    private void put(K key, V value, Collection<Node>[] table) {
-        put(createNode(key, value), table);
     }
 
     private void put(Node node, Collection<Node>[] table) {

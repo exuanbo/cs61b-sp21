@@ -142,7 +142,8 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             node.value = value;
             return;
         }
-        buckets[bucketIndex].add(createNode(key, value));
+        node = createNode(key, value);
+        buckets[bucketIndex].add(node);
         size += 1;
         if (hasReachedMaxLoad()) {
             resize(buckets.length * 2);

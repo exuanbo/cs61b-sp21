@@ -119,34 +119,34 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     private Node getNode(K key) {
         int bucketIndex = getIndex(key);
+        return getNode(key, bucketIndex);
+    }
+
+    private Node getNode(K key, int bucketIndex) {
         for (Node node : buckets[bucketIndex]) {
             if (node.key.equals(key)) {
                 return node;
             }
         }
         return null;
-    }
+	}
 
     public int size() {
         return size;
     }
 
     public void put(K key, V value) {
-        Node node = getNode(key);
+        int bucketIndex = getIndex(key);
+        Node node = getNode(key, bucketIndex);
         if (node != null) {
             node.value = value;
             return;
         }
-        put(createNode(key, value), buckets);
+        buckets[bucketIndex].add(createNode(key, value));
         size += 1;
         if (hasReachedMaxLoad()) {
             resize(buckets.length * 2);
         }
-    }
-
-    private void put(Node node, Collection<Node>[] table) {
-        int bucketIndex = getIndex(node.key, table);
-        table[bucketIndex].add(node);
     }
 
     private boolean hasReachedMaxLoad() {
@@ -157,7 +157,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         Collection<Node>[] newBuckets = createTable(capacity);
         Iterator<Node> nodeIterator = new MyHashMapNodeIterator();
         while (nodeIterator.hasNext()) {
-            put(nodeIterator.next(), newBuckets);
+            Node node = nodeIterator.next();
+            int bucketIndex = getIndex(node.key, newBuckets);
+            newBuckets[bucketIndex].add(node);
         }
         buckets = newBuckets;
     }
@@ -171,25 +173,24 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
     public V remove(K key) {
-        Node node = getNode(key);
+        int bucketIndex = getIndex(key);
+        Node node = getNode(key, bucketIndex);
         if (node == null) {
             return null;
         }
-        return remove(node);
+        size -= 1;
+        buckets[bucketIndex].remove(node);
+        return node.value;
     }
 
     public V remove(K key, V value) {
-        Node node = getNode(key);
+        int bucketIndex = getIndex(key);
+        Node node = getNode(key, bucketIndex);
         if (node == null || !node.value.equals(value)) {
             return null;
         }
-        return remove(node);
-    }
-
-    private V remove(Node node) {
-        int bucketIndex = getIndex(node.key);
-        buckets[bucketIndex].remove(node);
         size -= 1;
+        buckets[bucketIndex].remove(node);
         return node.value;
     }
 

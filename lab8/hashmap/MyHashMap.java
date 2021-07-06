@@ -26,8 +26,8 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
     /* Instance Variables */
-    public static final int DEFAULT_INITIAL_SIZE = 16;
-    public static final double DEFAULT_MAX_LOAD_FACTOR = 0.75;
+    private static final int DEFAULT_INITIAL_SIZE = 16;
+    private static final double DEFAULT_MAX_LOAD_FACTOR = 0.75;
     private final double maxLoadFactor;
     private Collection<Node>[] buckets;
     private int size = 0;
@@ -129,7 +129,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             }
         }
         return null;
-	}
+    }
 
     public int size() {
         return size;

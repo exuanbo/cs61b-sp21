@@ -13,7 +13,7 @@ public class MyUtils {
      */
     public static void mkdir(File dir) {
         if (!dir.mkdir()) {
-            exit("Directory %s can not be created.", dir.getPath());
+            throw new IllegalArgumentException(String.format("mkdir: %s: Failed to create.", dir.getPath()));
         }
     }
 
@@ -23,14 +23,8 @@ public class MyUtils {
      * @param file File instance
      */
     public static void rm(File file) {
-        if (!(new File(file.getParentFile(), ".gitlet")).isDirectory()) {
-            throw new IllegalArgumentException(
-                String.format("rm: %s: Not in an initialized Gitlet directory.", file.getPath())
-            );
-        }
-
         if (!file.delete()) {
-            throw new IllegalArgumentException(String.format("rm: %s: No such file or directory.", file.getPath()));
+            throw new IllegalArgumentException(String.format("rm: %s: Failed to delete.", file.getPath()));
         }
     }
 

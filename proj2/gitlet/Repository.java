@@ -199,6 +199,7 @@ public class Repository {
             exit("No changes added to the commit.");
         }
         Map<String, String> newTrackedFiles = stagingArea.commit();
+        stagingArea.save();
         Commit newCommit = new Commit(message, HEADCommit.getId(), newTrackedFiles);
         newCommit.save();
         File branchHeadRefFile = getBranchHeadRefFile(currentBranchName);

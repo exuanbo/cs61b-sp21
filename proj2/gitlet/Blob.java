@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 
 import static gitlet.MyUtils.mkdir;
-import static gitlet.MyUtils.rm;
+import static gitlet.MyUtils.rmObjectFile;
 import static gitlet.Utils.*;
 
 /**
@@ -97,12 +97,7 @@ public class Blob implements Serializable {
      * Delete the actual file in the objects folder.
      */
     public void delete() {
-        rm(file);
-        File dir = file.getParentFile();
-        //noinspection ConstantConditions
-        if (dir.list().length == 0) {
-            rm(dir);
-        }
+        rmObjectFile(file);
     }
 
     /**

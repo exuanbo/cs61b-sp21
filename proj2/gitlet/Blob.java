@@ -98,6 +98,11 @@ public class Blob implements Serializable {
      */
     public void delete() {
         rm(file);
+        File dir = file.getParentFile();
+        //noinspection ConstantConditions
+        if (dir.list().length == 0) {
+            rm(dir);
+        }
     }
 
     /**

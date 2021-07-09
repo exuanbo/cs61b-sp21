@@ -9,6 +9,8 @@ import static gitlet.Utils.*;
 
 /**
  * Represent the file object.
+ *
+ * @author Exuanbo
  */
 @SuppressWarnings("PrimitiveArrayArgumentToVarargsMethod")
 public class Blob implements Serializable {

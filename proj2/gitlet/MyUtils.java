@@ -4,6 +4,11 @@ import java.io.File;
 
 import static gitlet.Utils.message;
 
+/**
+ * Utility functions.
+ *
+ * @author Exuanbo
+ */
 public class MyUtils {
 
     /**

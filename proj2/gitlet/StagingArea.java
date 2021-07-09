@@ -12,6 +12,8 @@ import static gitlet.Utils.writeObject;
 
 /**
  * The staging area representation.
+ *
+ * @author Exuanbo
  */
 public class StagingArea implements Serializable {
 

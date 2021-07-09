@@ -35,11 +35,7 @@ public class StagingArea implements Serializable {
     /**
      * The tracked files Map with file path as key and SHA1 id as value.
      */
-    private transient Map<String, String> tracked = new HashMap<>();
-
-    // TODO Is the constructor necessary?
-    public StagingArea() {
-    }
+    private transient Map<String, String> tracked;
 
     /**
      * Get a StagingArea instance from the file INDEX.

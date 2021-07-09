@@ -1,9 +1,10 @@
 package gitlet;
 
 import java.io.File;
+import java.nio.file.Paths;
 
-import static gitlet.MyUtils.createDir;
 import static gitlet.MyUtils.exit;
+import static gitlet.MyUtils.mkdir;
 import static gitlet.Utils.join;
 import static gitlet.Utils.writeContents;
 
@@ -60,9 +61,16 @@ public class Repository {
     private static final String BRANCH_REF_PREFIX = "ref: refs/heads/";
 
     /**
-     * Constructor.
+     * The staging area instance. Initialized in the constructor.
      */
+    private final StagingArea stagingArea;
+
     public Repository() {
+        if (INDEX.exists()) {
+            stagingArea = StagingArea.fromFile();
+        } else {
+            stagingArea = new StagingArea();
+        }
     }
 
     /**
@@ -81,10 +89,10 @@ public class Repository {
             exit("A Gitlet version-control system already exists in the current directory.");
         }
 
-        createDir(GITLET_DIR);
-        createDir(REFS_DIR);
-        createDir(HEADS_REFS_DIR);
-        createDir(OBJECTS_DIR);
+        mkdir(GITLET_DIR);
+        mkdir(REFS_DIR);
+        mkdir(HEADS_REFS_DIR);
+        mkdir(OBJECTS_DIR);
 
         changeHEAD(DEFAULT_BRANCH_NAME);
     }
@@ -108,10 +116,22 @@ public class Repository {
     }
 
     /**
-     * Add file to stage area.
+     * Add file to the staging area.
      *
      * @param fileName File name
      */
     public void add(String fileName) {
+        File file;
+        if (Paths.get(fileName).isAbsolute()) {
+            file = new File(fileName);
+        } else {
+            file = join(CWD, fileName);
+        }
+        if (!file.exists()) {
+            exit("File does not exist.");
+        }
+        if (stagingArea.addFile(file)) {
+            stagingArea.save();
+        }
     }
 }

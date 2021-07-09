@@ -11,9 +11,26 @@ public class MyUtils {
      *
      * @param dir File object
      */
-    public static void createDir(File dir) {
+    public static void mkdir(File dir) {
         if (!dir.mkdir()) {
             exit("Directory %s can not be created.", dir.getPath());
+        }
+    }
+
+    /**
+     * Delete the file if exists.
+     *
+     * @param file File instance
+     */
+    public static void rm(File file) {
+        if (!(new File(file.getParentFile(), ".gitlet")).isDirectory()) {
+            throw new IllegalArgumentException(
+                String.format("rm: %s: Not in an initialized Gitlet directory.", file.getPath())
+            );
+        }
+
+        if (!file.delete()) {
+            throw new IllegalArgumentException(String.format("rm: %s: No such file or directory.", file.getPath()));
         }
     }
 

@@ -3,8 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 
-import static gitlet.MyUtils.mkdir;
-import static gitlet.MyUtils.rmObjectFile;
+import static gitlet.MyUtils.*;
 import static gitlet.Utils.*;
 
 /**
@@ -39,7 +38,7 @@ public class Blob implements Serializable {
         source = sourceFile;
         content = readContents(source);
         id = sha1(content);
-        file = getFileFromId(id);
+        file = getObjectFile(id);
     }
 
     /**
@@ -49,57 +48,21 @@ public class Blob implements Serializable {
      * @return Blob instance
      */
     public static Blob fromFile(String id) {
-        return readObject(getFileFromId(id), Blob.class);
-    }
-
-    /**
-     * Get a File instance with the path generated from SHA1 id.
-     *
-     * @param id SHA1 id
-     * @return File instance
-     */
-    private static File getFileFromId(String id) {
-        String dirName = getDirNameFromId(id);
-        String fileName = getFileNameFromId(id);
-        return join(Repository.OBJECTS_DIR, dirName, fileName);
-    }
-
-    /**
-     * Get directory name from SHA1 id in the objects folder.
-     *
-     * @param id SHA1 id
-     * @return Directory name
-     */
-    private static String getDirNameFromId(String id) {
-        return id.substring(0, 2);
-    }
-
-    /**
-     * Get file name from SHA1 id.
-     *
-     * @param id SHA1 id
-     * @return File name
-     */
-    private static String getFileNameFromId(String id) {
-        return id.substring(2);
+        return readObject(getObjectFile(id), Blob.class);
     }
 
     /**
      * Save this Blob instance to file in objects folder.
      */
     public void save() {
-        File dir = file.getParentFile();
-        if (!dir.exists()) {
-            mkdir(dir);
-        }
-        writeObject(file, this);
+        saveObjectFile(file, this);
     }
 
     /**
      * Delete the actual file in the objects folder.
      */
     public void delete() {
-        rmObjectFile(file);
+        rmWithDir(file);
     }
 
     /**

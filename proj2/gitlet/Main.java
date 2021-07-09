@@ -30,6 +30,15 @@ public class Main {
                 String fileName = args[1];
                 new Repository().add(fileName);
             }
+            case "commit" -> {
+                validateNumArgs(args, 2);
+                Repository.checkWorkingDir();
+                String message = args[1];
+                if (message.length() == 0) {
+                    exit("Please enter a commit message.");
+                }
+                new Repository().commit(message);
+            }
             default -> exit("No command with that name exists.");
         }
     }

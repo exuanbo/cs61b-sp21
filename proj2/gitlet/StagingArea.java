@@ -18,11 +18,6 @@ import static gitlet.Utils.writeObject;
 public class StagingArea implements Serializable {
 
     /**
-     * The tracked files Map with file path as key and SHA1 id as value.
-     */
-    private final Map<String, String> tracked = new HashMap<>();
-
-    /**
      * The added files Map with file path as key and SHA1 id as value.
      */
     private final Map<String, String> added = new HashMap<>();
@@ -37,6 +32,11 @@ public class StagingArea implements Serializable {
      */
     private final Set<String> removed = new HashSet<>();
 
+    /**
+     * The tracked files Map with file path as key and SHA1 id as value.
+     */
+    private transient Map<String, String> tracked = new HashMap<>();
+
     // TODO Is the constructor necessary?
     public StagingArea() {
     }
@@ -48,6 +48,15 @@ public class StagingArea implements Serializable {
      */
     public static StagingArea fromFile() {
         return readObject(Repository.INDEX, StagingArea.class);
+    }
+
+    /**
+     * Set tracked files.
+     *
+     * @param filesMap Files Map from commit instance.
+     */
+    public void setTracked(Map<String, String> filesMap) {
+        tracked = filesMap;
     }
 
     /**
@@ -65,6 +74,32 @@ public class StagingArea implements Serializable {
      */
     public boolean isClean() {
         return added.isEmpty() && modified.isEmpty() && removed.isEmpty();
+    }
+
+    /**
+     * Perform a commit.
+     *
+     * @return Tracked files Map
+     */
+    public Map<String, String> commit() {
+        for (Map.Entry<String, String> entryToAdd : added.entrySet()) {
+            tracked.put(entryToAdd.getKey(), entryToAdd.getValue());
+        }
+        added.clear();
+
+        for (Map.Entry<String, String> entryToModify : modified.entrySet()) {
+            String prevBlobId = tracked.put(entryToModify.getKey(), entryToModify.getValue());
+            Blob.fromFile(prevBlobId).delete();
+        }
+        modified.clear();
+
+        for (String filePathToRemove : removed) {
+            String blobId = tracked.remove(filePathToRemove);
+            Blob.fromFile(blobId).delete();
+        }
+        removed.clear();
+
+        return tracked;
     }
 
     /**

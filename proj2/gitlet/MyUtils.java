@@ -1,8 +1,9 @@
 package gitlet;
 
 import java.io.File;
+import java.io.Serializable;
 
-import static gitlet.Utils.message;
+import static gitlet.Utils.*;
 
 /**
  * Utility functions.
@@ -34,12 +35,12 @@ public class MyUtils {
     }
 
     /**
-     * Delete the object file and its directory if no other files exist.
+     * Delete the file and its directory if no other files exist.
      *
      * @param file File instance
      */
     @SuppressWarnings("ConstantConditions")
-    public static void rmObjectFile(File file) {
+    public static void rmWithDir(File file) {
         rm(file);
         File dir = file.getParentFile();
         if (dir.list().length == 0) {
@@ -56,5 +57,52 @@ public class MyUtils {
     public static void exit(String msg, Object... args) {
         message(msg, args);
         System.exit(0);
+    }
+
+    /**
+     * Get a File instance with the path generated from SHA1 id in the objects folder.
+     *
+     * @param id SHA1 id
+     * @return File instance
+     */
+    public static File getObjectFile(String id) {
+        String dirName = getObjectDirName(id);
+        String fileName = getObjectFileName(id);
+        return join(Repository.OBJECTS_DIR, dirName, fileName);
+    }
+
+    /**
+     * Get directory name from SHA1 id in the objects folder.
+     *
+     * @param id SHA1 id
+     * @return Directory name
+     */
+    private static String getObjectDirName(String id) {
+        return id.substring(0, 2);
+    }
+
+    /**
+     * Get file name from SHA1 id.
+     *
+     * @param id SHA1 id
+     * @return File name
+     */
+    private static String getObjectFileName(String id) {
+        return id.substring(2);
+    }
+
+    /**
+     * Save the serializable object to the file path.
+     * Create a parent directory if not exists.
+     *
+     * @param file File instance
+     * @param obj  Serializable object
+     */
+    public static void saveObjectFile(File file, Serializable obj) {
+        File dir = file.getParentFile();
+        if (!dir.exists()) {
+            mkdir(dir);
+        }
+        writeObject(file, obj);
     }
 }

@@ -2,7 +2,11 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static gitlet.MyUtils.*;
@@ -19,7 +23,7 @@ public class Commit implements Serializable {
     /**
      * The created time.
      */
-    private final String time;
+    private final Date time;
 
     /**
      * The message of this Commit.
@@ -46,12 +50,24 @@ public class Commit implements Serializable {
      */
     private final File file;
 
-    public Commit(String msg, String parent, Map<String, String> filesMap) {
-        time = new Date().toString();
+    public Commit(String msg, String parent, Map<String, String> trackedFilesMap) {
+        time = new Date();
         message = msg;
         parentCommitId = parent;
-        tracked = filesMap;
-        id = sha1(time, message, parentCommitId, tracked.toString());
+        tracked = trackedFilesMap;
+        id = generateId();
+        file = getObjectFile(id);
+    }
+
+    /**
+     * Initial commit.
+     */
+    public Commit() {
+        time = new Date(0);
+        message = "initial commit";
+        parentCommitId = "0".repeat(40);
+        tracked = new HashMap<>();
+        id = generateId();
         file = getObjectFile(id);
     }
 
@@ -63,6 +79,15 @@ public class Commit implements Serializable {
      */
     public static Commit fromFile(String id) {
         return readObject(getObjectFile(id), Commit.class);
+    }
+
+    /**
+     * Generate SHA1 id from timestamp, message, parentCommitId and tracked files Map.
+     *
+     * @return SHA1 id
+     */
+    private String generateId() {
+        return sha1(getTimestamp(), message, parentCommitId, tracked.toString());
     }
 
     /**
@@ -80,12 +105,23 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Get the time when the commit is created.
+     * Get the Date instance when the commit is created.
+     *
+     * @return Date instance
+     */
+    public Date getTime() {
+        return time;
+    }
+
+    /**
+     * Get the timestamp.
      *
      * @return Date and time
      */
-    public String getTime() {
-        return time;
+    public String getTimestamp() {
+        // Thu Jan 1 00:00:00 1970 +0000
+        DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+        return dateFormat.format(time);
     }
 
     /**

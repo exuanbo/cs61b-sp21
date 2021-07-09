@@ -2,7 +2,6 @@ package gitlet;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 
 import static gitlet.MyUtils.exit;
@@ -164,7 +163,7 @@ public class Repository {
      * Create an initial commit.
      */
     private static void createInitialCommit() {
-        Commit initialCommit = new Commit("initial commit", "0".repeat(40), new HashMap<>());
+        Commit initialCommit = new Commit();
         initialCommit.save();
         File branchHeadRefFile = getBranchHeadRefFile(DEFAULT_BRANCH_NAME);
         writeContents(branchHeadRefFile, initialCommit.getId());

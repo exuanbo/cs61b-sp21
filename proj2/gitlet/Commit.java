@@ -18,7 +18,7 @@ import static gitlet.Utils.sha1;
  *
  * @author Exuanbo
  */
-public class Commit implements Serializable {
+public class Commit implements Serializable, Dumpable {
 
     /**
      * The created time.
@@ -158,5 +158,21 @@ public class Commit implements Serializable {
      */
     public String getId() {
         return id;
+    }
+
+    /**
+     * Get commit log.
+     *
+     * @return Log content
+     */
+    public String getLog() {
+        return "===\n" +
+            "commit " + id + "\n" +
+            "Date: " + getTimestamp() + "\n" +
+            message + "\n";
+    }
+
+    public void dump() {
+        System.out.print(getLog());
     }
 }

@@ -15,7 +15,7 @@ import static gitlet.Utils.writeObject;
  *
  * @author Exuanbo
  */
-public class StagingArea implements Serializable {
+public class StagingArea implements Serializable, Dumpable {
 
     /**
      * The added files Map with file path as key and SHA1 id as value.
@@ -132,5 +132,9 @@ public class StagingArea implements Serializable {
         }
         blob.save();
         return true;
+    }
+
+    public void dump() {
+        System.out.printf("added: %s\nmodified: %s\nremoved: %s", added, modified, removed);
     }
 }

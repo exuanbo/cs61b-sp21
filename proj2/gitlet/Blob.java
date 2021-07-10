@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 
 import static gitlet.MyUtils.*;
 import static gitlet.Utils.*;
@@ -12,7 +13,7 @@ import static gitlet.Utils.*;
  * @author Exuanbo
  */
 @SuppressWarnings("PrimitiveArrayArgumentToVarargsMethod")
-public class Blob implements Serializable {
+public class Blob implements Serializable, Dumpable {
 
     /**
      * The source file from constructor.
@@ -79,5 +80,9 @@ public class Blob implements Serializable {
      */
     public void writeContentToSource() {
         writeContents(source, content);
+    }
+
+    public void dump() {
+        System.out.printf("path: %s\ncontent: %s", source.getPath(), new String(content, StandardCharsets.UTF_8));
     }
 }

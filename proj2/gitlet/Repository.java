@@ -219,9 +219,9 @@ public class Repository {
         if (stagingArea.isClean()) {
             exit("No changes added to the commit.");
         }
-        Map<String, String> newTrackedFiles = stagingArea.commit();
+        Map<String, String> newTracked = stagingArea.commit();
         stagingArea.save();
-        Commit newCommit = new Commit(message, HEADCommit.getId(), newTrackedFiles);
+        Commit newCommit = new Commit(message, new String[]{HEADCommit.getId()}, newTracked);
         newCommit.save();
         changeBranchHead(currentBranchName, newCommit.getId());
     }

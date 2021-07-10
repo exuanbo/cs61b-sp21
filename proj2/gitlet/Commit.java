@@ -2,13 +2,9 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.MyUtils.*;
 import static gitlet.Utils.readObject;
@@ -22,9 +18,9 @@ import static gitlet.Utils.sha1;
 public class Commit implements Serializable, Dumpable {
 
     /**
-     * The created time.
+     * The created date.
      */
-    private final Date time;
+    private final Date date;
 
     /**
      * The message of this Commit.
@@ -32,9 +28,9 @@ public class Commit implements Serializable, Dumpable {
     private final String message;
 
     /**
-     * The parent commit SHA1 id.
+     * The parent commits SHA1 id.
      */
-    private final String parentCommitId;
+    private final String[] parents;
 
     /**
      * The tracked files Map with file path as key and SHA1 id as value..
@@ -51,10 +47,10 @@ public class Commit implements Serializable, Dumpable {
      */
     private final File file;
 
-    public Commit(String msg, String parent, Map<String, String> trackedFilesMap) {
-        time = new Date();
+    public Commit(String msg, String[] parentsArray, Map<String, String> trackedFilesMap) {
+        date = new Date();
         message = msg;
-        parentCommitId = parent;
+        parents = parentsArray;
         tracked = trackedFilesMap;
         id = generateId();
         file = getObjectFile(id);
@@ -64,9 +60,9 @@ public class Commit implements Serializable, Dumpable {
      * Initial commit.
      */
     public Commit() {
-        time = new Date(0);
+        date = new Date(0);
         message = "initial commit";
-        parentCommitId = "0".repeat(40);
+        parents = new String[0];
         tracked = new HashMap<>();
         id = generateId();
         file = getObjectFile(id);
@@ -83,12 +79,12 @@ public class Commit implements Serializable, Dumpable {
     }
 
     /**
-     * Generate SHA1 id from timestamp, message, parentCommitId and tracked files Map.
+     * Generate a SHA1 id from timestamp, message, parents Array and tracked files Map.
      *
      * @return SHA1 id
      */
     private String generateId() {
-        return sha1(getTimestamp(), message, parentCommitId, tracked.toString());
+        return sha1(getTimestamp(), message, Arrays.toString(parents), tracked.toString());
     }
 
     /**
@@ -110,8 +106,8 @@ public class Commit implements Serializable, Dumpable {
      *
      * @return Date instance
      */
-    public Date getTime() {
-        return time;
+    public Date getDate() {
+        return date;
     }
 
     /**
@@ -122,7 +118,7 @@ public class Commit implements Serializable, Dumpable {
     public String getTimestamp() {
         // Thu Jan 1 00:00:00 1970 +0000
         DateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
-        return dateFormat.format(time);
+        return dateFormat.format(date);
     }
 
     /**
@@ -135,12 +131,12 @@ public class Commit implements Serializable, Dumpable {
     }
 
     /**
-     * Get the parent commit id.
+     * Get the parent commits id.
      *
-     * @return Parent commit id.
+     * @return Array of parent commits id.
      */
-    public String getParentCommitId() {
-        return parentCommitId;
+    public String[] getParents() {
+        return parents;
     }
 
     /**
@@ -162,7 +158,7 @@ public class Commit implements Serializable, Dumpable {
     }
 
     /**
-     * Get commit log.
+     * Get the commit log.
      *
      * @return Log content
      */

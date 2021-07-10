@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -169,10 +170,10 @@ public class Commit implements Serializable, Dumpable {
         return "===\n" +
             "commit " + id + "\n" +
             "Date: " + getTimestamp() + "\n" +
-            message + "\n";
+            message + "\n\n";
     }
 
     public void dump() {
-        System.out.print(getLog());
+        System.out.println(getLog() + tracked);
     }
 }

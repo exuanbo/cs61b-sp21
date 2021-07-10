@@ -83,6 +83,6 @@ public class Blob implements Serializable, Dumpable {
     }
 
     public void dump() {
-        System.out.printf("path: %s\ncontent: %s", source.getPath(), new String(content, StandardCharsets.UTF_8));
+        System.out.printf("path: %s\ncontent: %s\n", source.getPath(), new String(content, StandardCharsets.UTF_8));
     }
 }

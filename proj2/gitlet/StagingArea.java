@@ -78,22 +78,22 @@ public class StagingArea implements Serializable {
      * @return Tracked files Map
      */
     public Map<String, String> commit() {
-        for (Map.Entry<String, String> entryToAdd : added.entrySet()) {
-            tracked.put(entryToAdd.getKey(), entryToAdd.getValue());
+        tracked.putAll(added);
+        tracked.putAll(modified);
+        for (String filePath : removed) {
+            tracked.remove(filePath);
         }
-        added.clear();
-
-        for (Map.Entry<String, String> entryToModify : modified.entrySet()) {
-            tracked.put(entryToModify.getKey(), entryToModify.getValue());
-        }
-        modified.clear();
-
-        for (String filePathToRemove : removed) {
-            tracked.remove(filePathToRemove);
-        }
-        removed.clear();
-
+        clear();
         return tracked;
+    }
+
+    /**
+     * Clear the staging area.
+     */
+    private void clear() {
+        added.clear();
+        modified.clear();
+        removed.clear();
     }
 
     /**

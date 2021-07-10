@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static gitlet.MyUtils.rmIfExists;
+import static gitlet.MyUtils.rm;
 import static gitlet.Utils.readObject;
 import static gitlet.Utils.writeObject;
 
@@ -157,7 +157,9 @@ public class StagingArea implements Serializable, Dumpable {
             if (modifiedBlobId != null) {
                 Blob.fromFile(modifiedBlobId).delete();
             }
-            rmIfExists(file);
+            if (file.exists()) {
+                rm(file);
+            }
             return true;
         }
 

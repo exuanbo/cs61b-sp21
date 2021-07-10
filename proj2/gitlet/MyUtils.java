@@ -35,17 +35,6 @@ public class MyUtils {
     }
 
     /**
-     * Delete the file if exists.
-     *
-     * @param file File instance
-     */
-    public static void rmIfExists(File file) {
-        if (file.exists()) {
-            rm(file);
-        }
-    }
-
-    /**
      * Delete the file and its directory if no other files exist.
      *
      * @param file File instance

@@ -84,14 +84,12 @@ public class StagingArea implements Serializable {
         added.clear();
 
         for (Map.Entry<String, String> entryToModify : modified.entrySet()) {
-            String prevBlobId = tracked.put(entryToModify.getKey(), entryToModify.getValue());
-            Blob.fromFile(prevBlobId).delete();
+            tracked.put(entryToModify.getKey(), entryToModify.getValue());
         }
         modified.clear();
 
         for (String filePathToRemove : removed) {
-            String blobId = tracked.remove(filePathToRemove);
-            Blob.fromFile(blobId).delete();
+            tracked.remove(filePathToRemove);
         }
         removed.clear();
 

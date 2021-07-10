@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static gitlet.MyUtils.rmIfExists;
 import static gitlet.Utils.readObject;
 import static gitlet.Utils.writeObject;
 
@@ -132,6 +133,35 @@ public class StagingArea implements Serializable, Dumpable {
         }
         blob.save();
         return true;
+    }
+
+    /**
+     * Remove file.
+     *
+     * @param file File instance
+     * @return true if the staging area is changed
+     */
+    public boolean removeFile(File file) {
+        String filePath = file.getPath();
+
+        String addedBlobId = added.remove(filePath);
+        if (addedBlobId != null) {
+            Blob.fromFile(addedBlobId).delete();
+            return true;
+        }
+
+        String trackedBlobId = tracked.remove(filePath);
+        if (trackedBlobId != null) {
+            removed.add(filePath);
+            String modifiedBlobId = modified.remove(filePath);
+            if (modifiedBlobId != null) {
+                Blob.fromFile(modifiedBlobId).delete();
+            }
+            rmIfExists(file);
+            return true;
+        }
+
+        return false;
     }
 
     public void dump() {

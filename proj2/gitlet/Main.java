@@ -39,6 +39,12 @@ public class Main {
                 }
                 new Repository().commit(message);
             }
+            case "rm" -> {
+                validateNumArgs(args, 2);
+                Repository.checkWorkingDir();
+                String fileName = args[1];
+                new Repository().remove(fileName);
+            }
             default -> exit("No command with that name exists.");
         }
     }

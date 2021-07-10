@@ -24,13 +24,24 @@ public class MyUtils {
     }
 
     /**
-     * Delete the file if exists.
+     * Delete the file.
      *
      * @param file File instance
      */
     public static void rm(File file) {
         if (!file.delete()) {
             throw new IllegalArgumentException(String.format("rm: %s: Failed to delete.", file.getPath()));
+        }
+    }
+
+    /**
+     * Delete the file if exists.
+     *
+     * @param file File instance
+     */
+    public static void rmIfExists(File file) {
+        if (file.exists()) {
+            rm(file);
         }
     }
 

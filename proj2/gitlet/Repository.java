@@ -180,17 +180,28 @@ public class Repository {
     }
 
     /**
-     * Add file to the staging area.
+     * Get a File instance from CWD by the name.
      *
      * @param fileName Name of the file
+     * @return File instance
      */
-    public void add(String fileName) {
+    private static File getFileFromCWD(String fileName) {
         File file;
         if (Paths.get(fileName).isAbsolute()) {
             file = new File(fileName);
         } else {
             file = join(CWD, fileName);
         }
+        return file;
+    }
+
+    /**
+     * Add file to the staging area.
+     *
+     * @param fileName Name of the file
+     */
+    public void add(String fileName) {
+        File file = getFileFromCWD(fileName);
         if (!file.exists()) {
             exit("File does not exist.");
         }
@@ -213,5 +224,19 @@ public class Repository {
         Commit newCommit = new Commit(message, HEADCommit.getId(), newTrackedFiles);
         newCommit.save();
         changeBranchHead(currentBranchName, newCommit.getId());
+    }
+
+    /**
+     * Remove file.
+     *
+     * @param fileName Name of the file
+     */
+    public void remove(String fileName) {
+        File file = getFileFromCWD(fileName);
+        if (stagingArea.removeFile(file)) {
+            stagingArea.save();
+        } else {
+            exit("No reason to remove the file.");
+        }
     }
 }

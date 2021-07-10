@@ -48,7 +48,7 @@ public class Repository {
     /**
      * The heads directory.
      */
-    private static final File HEADS_REFS_DIR = join(REFS_DIR, "heads");
+    private static final File BRANCH_HEADS_DIR = join(REFS_DIR, "heads");
 
     /**
      * Default branch name.
@@ -58,7 +58,7 @@ public class Repository {
     /**
      * HEAD ref prefix.
      */
-    private static final String BRANCH_REF_PREFIX = "ref: refs/heads/";
+    private static final String HEAD_BRANCH_REF_PREFIX = "ref: refs/heads/";
 
     /**
      * The staging area instance. Initialized in the constructor.
@@ -112,7 +112,7 @@ public class Repository {
         }
         mkdir(GITLET_DIR);
         mkdir(REFS_DIR);
-        mkdir(HEADS_REFS_DIR);
+        mkdir(BRANCH_HEADS_DIR);
         mkdir(OBJECTS_DIR);
         changeCurrentBranch(DEFAULT_BRANCH_NAME);
         createInitialCommit();
@@ -121,11 +121,11 @@ public class Repository {
     /**
      * Get current branch name from HEAD file.
      *
-     * @return Branch name
+     * @return Name of the branch
      */
     private static String getCurrentBranchName() {
         String HEADContent = readContentsAsString(HEAD);
-        return HEADContent.replace(BRANCH_REF_PREFIX, "");
+        return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
     }
 
     /**
@@ -135,8 +135,8 @@ public class Repository {
      * @return Commit instance
      */
     private static Commit getHeadCommit(String branchName) {
-        File branchHeadRefFile = getBranchHeadRefFile(branchName);
-        String HEADCommitId = readContentsAsString(branchHeadRefFile);
+        File branchHeadFile = getBranchHeadFile(branchName);
+        String HEADCommitId = readContentsAsString(branchHeadFile);
         return Commit.fromFile(HEADCommitId);
     }
 
@@ -146,17 +146,17 @@ public class Repository {
      * @param branchName Name of the branch
      * @return File instance
      */
-    private static File getBranchHeadRefFile(String branchName) {
-        return join(HEADS_REFS_DIR, branchName);
+    private static File getBranchHeadFile(String branchName) {
+        return join(BRANCH_HEADS_DIR, branchName);
     }
 
     /**
      * Change current branch.
      *
-     * @param branchName Branch name
+     * @param branchName Name of the branch
      */
     private static void changeCurrentBranch(String branchName) {
-        writeContents(HEAD, BRANCH_REF_PREFIX + branchName);
+        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branchName);
     }
 
     /**
@@ -165,14 +165,24 @@ public class Repository {
     private static void createInitialCommit() {
         Commit initialCommit = new Commit();
         initialCommit.save();
-        File branchHeadRefFile = getBranchHeadRefFile(DEFAULT_BRANCH_NAME);
-        writeContents(branchHeadRefFile, initialCommit.getId());
+        changeBranchHead(DEFAULT_BRANCH_NAME, initialCommit.getId());
+    }
+
+    /**
+     * Change branch head.
+     *
+     * @param branchName Name of the branch
+     * @param id         Commit SHA1 id
+     */
+    private static void changeBranchHead(String branchName, String id) {
+        File branchHeadFile = getBranchHeadFile(branchName);
+        writeContents(branchHeadFile, id);
     }
 
     /**
      * Add file to the staging area.
      *
-     * @param fileName File name
+     * @param fileName Name of the file
      */
     public void add(String fileName) {
         File file;
@@ -202,7 +212,6 @@ public class Repository {
         stagingArea.save();
         Commit newCommit = new Commit(message, HEADCommit.getId(), newTrackedFiles);
         newCommit.save();
-        File branchHeadRefFile = getBranchHeadRefFile(currentBranchName);
-        writeContents(branchHeadRefFile, newCommit.getId());
+        changeBranchHead(currentBranchName, newCommit.getId());
     }
 }

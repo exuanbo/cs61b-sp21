@@ -239,4 +239,19 @@ public class Repository {
             exit("No reason to remove the file.");
         }
     }
+
+    /**
+     * Print log of the current branch.
+     */
+    public void log() {
+        Commit currentCommit = HEADCommit;
+        while (true) {
+            System.out.println(currentCommit.getLog());
+            String[] currentCommitParents = currentCommit.getParents();
+            if (currentCommitParents.length == 0) {
+                break;
+            }
+            currentCommit = Commit.fromFile(currentCommitParents[0]);
+        }
+    }
 }

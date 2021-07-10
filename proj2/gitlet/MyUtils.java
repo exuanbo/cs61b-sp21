@@ -15,7 +15,7 @@ public class MyUtils {
     /**
      * Create a directory from the File object.
      *
-     * @param dir File object
+     * @param dir Directory File instance
      */
     public static void mkdir(File dir) {
         if (!dir.mkdir()) {
@@ -75,7 +75,7 @@ public class MyUtils {
      * Get directory name from SHA1 id in the objects folder.
      *
      * @param id SHA1 id
-     * @return Directory name
+     * @return Name of the directory
      */
     private static String getObjectDirName(String id) {
         return id.substring(0, 2);
@@ -85,7 +85,7 @@ public class MyUtils {
      * Get file name from SHA1 id.
      *
      * @param id SHA1 id
-     * @return File name
+     * @return Name of the file
      */
     private static String getObjectFileName(String id) {
         return id.substring(2);

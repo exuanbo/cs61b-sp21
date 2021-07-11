@@ -35,20 +35,6 @@ public class MyUtils {
     }
 
     /**
-     * Delete the file and its directory if no other files exist.
-     *
-     * @param file File instance
-     */
-    @SuppressWarnings("ConstantConditions")
-    public static void rmWithDir(File file) {
-        rm(file);
-        File dir = file.getParentFile();
-        if (dir.list().length == 0) {
-            rm(dir);
-        }
-    }
-
-    /**
      * Print a message and exit with status code 0.
      *
      * @param msg  String to print

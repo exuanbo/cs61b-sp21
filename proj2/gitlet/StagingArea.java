@@ -114,9 +114,7 @@ public class StagingArea implements Serializable, Dumpable {
         String trackedBlobId = tracked.get(filePath);
         if (trackedBlobId != null) {
             if (trackedBlobId.equals(blobId)) {
-                String modifiedBlobId = modified.remove(filePath);
-                if (modifiedBlobId != null) {
-                    Blob.fromFile(modifiedBlobId).delete();
+                if (modified.remove(filePath) != null) {
                     return true;
                 }
                 return removed.remove(filePath);
@@ -125,13 +123,13 @@ public class StagingArea implements Serializable, Dumpable {
         }
 
         String prevBlobId = (isModified ? modified : added).put(filePath, blobId);
-        if (prevBlobId != null) {
-            if (prevBlobId.equals(blobId)) {
-                return false;
-            }
-            Blob.fromFile(prevBlobId).delete();
+        if (prevBlobId != null && prevBlobId.equals(blobId)) {
+            return false;
         }
-        blob.save();
+
+        if (!blob.getFile().exists()) {
+            blob.save();
+        }
         return true;
     }
 
@@ -146,17 +144,12 @@ public class StagingArea implements Serializable, Dumpable {
 
         String addedBlobId = added.remove(filePath);
         if (addedBlobId != null) {
-            Blob.fromFile(addedBlobId).delete();
             return true;
         }
 
-        String trackedBlobId = tracked.remove(filePath);
-        if (trackedBlobId != null) {
+        if (tracked.get(filePath) != null) {
+            modified.remove(filePath);
             removed.add(filePath);
-            String modifiedBlobId = modified.remove(filePath);
-            if (modifiedBlobId != null) {
-                Blob.fromFile(modifiedBlobId).delete();
-            }
             if (file.exists()) {
                 rm(file);
             }

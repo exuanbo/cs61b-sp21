@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
-import static gitlet.MyUtils.*;
+import static gitlet.MyUtils.getObjectFile;
+import static gitlet.MyUtils.saveObjectFile;
 import static gitlet.Utils.*;
 
 /**
@@ -60,10 +61,10 @@ public class Blob implements Serializable, Dumpable {
     }
 
     /**
-     * Delete the actual file in the objects folder.
+     * Write the file content back to the source file.
      */
-    public void delete() {
-        rmWithDir(file);
+    public void writeContentToSource() {
+        writeContents(source, content);
     }
 
     /**
@@ -76,10 +77,12 @@ public class Blob implements Serializable, Dumpable {
     }
 
     /**
-     * Write the file content back to the source file.
+     * Get the Blob file.
+     *
+     * @return File instance
      */
-    public void writeContentToSource() {
-        writeContents(source, content);
+    public File getFile() {
+        return file;
     }
 
     public void dump() {

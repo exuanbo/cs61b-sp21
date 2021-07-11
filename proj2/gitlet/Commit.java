@@ -6,7 +6,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static gitlet.MyUtils.*;
+import static gitlet.MyUtils.getObjectFile;
+import static gitlet.MyUtils.saveObjectFile;
 import static gitlet.Utils.readObject;
 import static gitlet.Utils.sha1;
 
@@ -92,13 +93,6 @@ public class Commit implements Serializable, Dumpable {
      */
     public void save() {
         saveObjectFile(file, this);
-    }
-
-    /**
-     * Delete the actual file in the objects folder.
-     */
-    public void delete() {
-        rmWithDir(file);
     }
 
     /**

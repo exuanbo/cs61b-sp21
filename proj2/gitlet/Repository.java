@@ -2,7 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.MyUtils.exit;
 import static gitlet.MyUtils.mkdir;
@@ -247,11 +247,55 @@ public class Repository {
         Commit currentCommit = HEADCommit;
         while (true) {
             System.out.println(currentCommit.getLog());
-            String[] currentCommitParents = currentCommit.getParents();
-            if (currentCommitParents.length == 0) {
+            String[] parents = currentCommit.getParents();
+            if (parents.length == 0) {
                 break;
             }
-            currentCommit = Commit.fromFile(currentCommitParents[0]);
+            String firstParentId = parents[0];
+            currentCommit = Commit.fromFile(firstParentId);
+        }
+    }
+
+    /**
+     * Print all commit logs ever made.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public void globalLog() {
+        File[] branchHeads = BRANCH_HEADS_DIR.listFiles();
+        if (branchHeads.length == 1) {
+            log();
+            return;
+        }
+        Arrays.sort(branchHeads, Comparator.comparing(File::getName));
+
+        Queue<Commit> commitsToLog = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
+        Set<String> commitIds = new HashSet<>();
+
+        for (File headFile : branchHeads) {
+            String headId = readContentsAsString(headFile);
+            if (commitIds.contains(headId)) {
+                continue;
+            }
+            commitIds.add(headId);
+            Commit headCommit = Commit.fromFile(headId);
+            commitsToLog.add(headCommit);
+        }
+
+        while (true) {
+            Commit latestCommit = commitsToLog.poll();
+            System.out.println(latestCommit.getLog());
+            String[] parents = latestCommit.getParents();
+            if (parents.length == 0) {
+                break;
+            }
+            for (String parentId : parents) {
+                if (commitIds.contains(parentId)) {
+                    continue;
+                }
+                commitIds.add(parentId);
+                Commit parentCommit = Commit.fromFile(parentId);
+                commitsToLog.add(parentCommit);
+            }
         }
     }
 }

@@ -50,6 +50,11 @@ public class Main {
                 Repository.checkWorkingDir();
                 new Repository().log();
             }
+            case "global-log" -> {
+                validateNumArgs(args, 1);
+                Repository.checkWorkingDir();
+                new Repository().globalLog();
+            }
             default -> exit("No command with that name exists.");
         }
     }

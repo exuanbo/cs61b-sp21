@@ -3,7 +3,6 @@ package gitlet;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static gitlet.MyUtils.exit;
@@ -124,7 +123,9 @@ public class Repository {
      * Print all commit logs ever made.
      */
     public static void globalLog() {
-        forEachCommitInOrder(commit -> System.out.println(commit.getLog()));
+        StringBuilder logBuilder = new StringBuilder();
+        forEachCommitInOrder(commit -> logBuilder.append(commit.getLog()).append("\n"));
+        System.out.print(logBuilder);
     }
 
     /**
@@ -133,16 +134,16 @@ public class Repository {
      * @param message Content of the message
      */
     public static void find(String message) {
-        AtomicBoolean isFound = new AtomicBoolean(false);
+        StringBuilder resultBuilder = new StringBuilder();
         forEachCommitInOrder(commit -> {
             if (commit.getMessage().equals(message)) {
-                System.out.println(commit.getId());
-                isFound.set(true);
+                resultBuilder.append(commit.getId()).append("\n");
             }
         });
-        if (!isFound.get()) {
+        if (resultBuilder.length() == 0) {
             exit("Found no commit with that message.");
         }
+        System.out.print(resultBuilder);
     }
 
     /**
@@ -313,9 +314,10 @@ public class Repository {
      * Print log of the current branch.
      */
     public void log() {
+        StringBuilder logBuilder = new StringBuilder();
         Commit currentCommit = HEADCommit;
         while (true) {
-            System.out.println(currentCommit.getLog());
+            logBuilder.append(currentCommit.getLog()).append("\n");
             String[] parents = currentCommit.getParents();
             if (parents.length == 0) {
                 break;
@@ -323,5 +325,6 @@ public class Repository {
             String firstParentId = parents[0];
             currentCommit = Commit.fromFile(firstParentId);
         }
+        System.out.print(logBuilder);
     }
 }

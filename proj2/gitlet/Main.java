@@ -53,7 +53,16 @@ public class Main {
             case "global-log" -> {
                 validateNumArgs(args, 1);
                 Repository.checkWorkingDir();
-                new Repository().globalLog();
+                Repository.globalLog();
+            }
+            case "find" -> {
+                validateNumArgs(args, 2);
+                Repository.checkWorkingDir();
+                String message = args[1];
+                if (message.length() == 0) {
+                    exit("Found no commit with that message.");
+                }
+                Repository.find(message);
             }
             default -> exit("No command with that name exists.");
         }

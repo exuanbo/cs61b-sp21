@@ -3,6 +3,8 @@ package gitlet;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static gitlet.MyUtils.exit;
 import static gitlet.MyUtils.mkdir;
@@ -119,6 +121,31 @@ public class Repository {
     }
 
     /**
+     * Print all commit logs ever made.
+     */
+    public static void globalLog() {
+        forEachCommitInOrder(commit -> System.out.println(commit.getLog()));
+    }
+
+    /**
+     * Print all commits that have the exact message.
+     *
+     * @param message Content of the message
+     */
+    public static void find(String message) {
+        AtomicBoolean isFound = new AtomicBoolean(false);
+        forEachCommitInOrder(commit -> {
+            if (commit.getMessage().equals(message)) {
+                System.out.println(commit.getId());
+                isFound.set(true);
+            }
+        });
+        if (!isFound.get()) {
+            exit("Found no commit with that message.");
+        }
+    }
+
+    /**
      * Get current branch name from HEAD file.
      *
      * @return Name of the branch
@@ -196,6 +223,48 @@ public class Repository {
     }
 
     /**
+     * Iterate all commits in the order of created date
+     * and execute callback function on each of them.
+     *
+     * @param cb Function that accepts Commit as a single argument
+     */
+    @SuppressWarnings("ConstantConditions")
+    private static void forEachCommitInOrder(Consumer<Commit> cb) {
+        Queue<Commit> commitsToLog = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
+        Set<String> commitIds = new HashSet<>();
+
+        File[] branchHeads = BRANCH_HEADS_DIR.listFiles();
+        Arrays.sort(branchHeads, Comparator.comparing(File::getName));
+
+        for (File headFile : branchHeads) {
+            String headId = readContentsAsString(headFile);
+            if (commitIds.contains(headId)) {
+                continue;
+            }
+            commitIds.add(headId);
+            Commit headCommit = Commit.fromFile(headId);
+            commitsToLog.add(headCommit);
+        }
+
+        while (true) {
+            Commit latestCommit = commitsToLog.poll();
+            cb.accept(latestCommit);
+            String[] parents = latestCommit.getParents();
+            if (parents.length == 0) {
+                break;
+            }
+            for (String parentId : parents) {
+                if (commitIds.contains(parentId)) {
+                    continue;
+                }
+                commitIds.add(parentId);
+                Commit parentCommit = Commit.fromFile(parentId);
+                commitsToLog.add(parentCommit);
+            }
+        }
+    }
+
+    /**
      * Add file to the staging area.
      *
      * @param fileName Name of the file
@@ -253,49 +322,6 @@ public class Repository {
             }
             String firstParentId = parents[0];
             currentCommit = Commit.fromFile(firstParentId);
-        }
-    }
-
-    /**
-     * Print all commit logs ever made.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public void globalLog() {
-        File[] branchHeads = BRANCH_HEADS_DIR.listFiles();
-        if (branchHeads.length == 1) {
-            log();
-            return;
-        }
-        Arrays.sort(branchHeads, Comparator.comparing(File::getName));
-
-        Queue<Commit> commitsToLog = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
-        Set<String> commitIds = new HashSet<>();
-
-        for (File headFile : branchHeads) {
-            String headId = readContentsAsString(headFile);
-            if (commitIds.contains(headId)) {
-                continue;
-            }
-            commitIds.add(headId);
-            Commit headCommit = Commit.fromFile(headId);
-            commitsToLog.add(headCommit);
-        }
-
-        while (true) {
-            Commit latestCommit = commitsToLog.poll();
-            System.out.println(latestCommit.getLog());
-            String[] parents = latestCommit.getParents();
-            if (parents.length == 0) {
-                break;
-            }
-            for (String parentId : parents) {
-                if (commitIds.contains(parentId)) {
-                    continue;
-                }
-                commitIds.add(parentId);
-                Commit parentCommit = Commit.fromFile(parentId);
-                commitsToLog.add(parentCommit);
-            }
         }
     }
 }

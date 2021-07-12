@@ -69,6 +69,31 @@ public class Main {
                 Repository.checkWorkingDir();
                 new Repository().status();
             }
+            case "checkout" -> {
+                Repository repository = new Repository();
+                switch (args.length) {
+                    case 3 -> {
+                        if (!args[1].equals("--")) {
+                            exit("Incorrect operands.");
+                        }
+                        String fileName = args[2];
+                        repository.checkout(fileName);
+                    }
+                    case 4 -> {
+                        if (!args[2].equals("--")) {
+                            exit("Incorrect operands.");
+                        }
+                        String commitId = args[1];
+                        String fileName = args[3];
+                        repository.checkout(commitId, fileName);
+                    }
+                    case 2 -> {
+                        String branch = args[1];
+                        repository.checkoutBranch(branch);
+                    }
+                    default -> exit("Incorrect operands.");
+                }
+            }
             default -> exit("No command with that name exists.");
         }
     }

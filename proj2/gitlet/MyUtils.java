@@ -1,6 +1,8 @@
 package gitlet;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 import static gitlet.Utils.*;
@@ -46,6 +48,21 @@ public class MyUtils {
     }
 
     /**
+     * Tells if the deserialized object instance of given class.
+     *
+     * @param file File instance
+     * @param c Target class
+     * @return true if is instance
+     */
+    public static boolean isFileInstanceOf(File file, Class<?> c) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+            return c.isInstance(in.readObject());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Get a File instance with the path generated from SHA1 id in the objects folder.
      *
      * @param id SHA1 id
@@ -63,7 +80,7 @@ public class MyUtils {
      * @param id SHA1 id
      * @return Name of the directory
      */
-    private static String getObjectDirName(String id) {
+    public static String getObjectDirName(String id) {
         return id.substring(0, 2);
     }
 
@@ -73,7 +90,7 @@ public class MyUtils {
      * @param id SHA1 id
      * @return Name of the file
      */
-    private static String getObjectFileName(String id) {
+    public static String getObjectFileName(String id) {
         return id.substring(2);
     }
 

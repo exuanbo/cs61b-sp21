@@ -48,6 +48,15 @@ public class StagingArea implements Serializable, Dumpable {
     }
 
     /**
+     * Set tracked files.
+     *
+     * @param filesMap Map with file path as key and SHA1 id as value.
+     */
+    public void setTracked(Map<String, String> filesMap) {
+        tracked = filesMap;
+    }
+
+    /**
      * Get added files Map.
      *
      * @return Map with file path as key and SHA1 id as value.
@@ -75,24 +84,6 @@ public class StagingArea implements Serializable, Dumpable {
     }
 
     /**
-     * Get the tracked files Map.
-     *
-     * @return Map with file path as key and SHA1 id as value.
-     */
-    public Map<String, String> getTracked() {
-        return tracked;
-    }
-
-    /**
-     * Set tracked files.
-     *
-     * @param filesMap Map with file path as key and SHA1 id as value.
-     */
-    public void setTracked(Map<String, String> filesMap) {
-        tracked = filesMap;
-    }
-
-    /**
      * Save this instance to the file INDEX.
      */
     public void save() {
@@ -110,6 +101,15 @@ public class StagingArea implements Serializable, Dumpable {
     }
 
     /**
+     * Clear the staging area.
+     */
+    public void clear() {
+        added.clear();
+        modified.clear();
+        removed.clear();
+    }
+
+    /**
      * Perform a commit. Return tracked files Map after commit.
      *
      * @return Map with file path as key and SHA1 id as value.
@@ -120,9 +120,7 @@ public class StagingArea implements Serializable, Dumpable {
         for (String filePath : removed) {
             tracked.remove(filePath);
         }
-        added.clear();
-        modified.clear();
-        removed.clear();
+        clear();
         return tracked;
     }
 

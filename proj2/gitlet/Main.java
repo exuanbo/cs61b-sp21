@@ -25,14 +25,14 @@ public class Main {
                 Repository.init();
             }
             case "add" -> {
-                validateNumArgs(args, 2);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
                 String fileName = args[1];
                 new Repository().add(fileName);
             }
             case "commit" -> {
-                validateNumArgs(args, 2);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
                 String message = args[1];
                 if (message.length() == 0) {
                     exit("Please enter a commit message.");
@@ -40,24 +40,24 @@ public class Main {
                 new Repository().commit(message);
             }
             case "rm" -> {
-                validateNumArgs(args, 2);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
                 String fileName = args[1];
                 new Repository().remove(fileName);
             }
             case "log" -> {
-                validateNumArgs(args, 1);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 1);
                 new Repository().log();
             }
             case "global-log" -> {
-                validateNumArgs(args, 1);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 1);
                 Repository.globalLog();
             }
             case "find" -> {
-                validateNumArgs(args, 2);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
                 String message = args[1];
                 if (message.length() == 0) {
                     exit("Found no commit with that message.");
@@ -65,11 +65,12 @@ public class Main {
                 Repository.find(message);
             }
             case "status" -> {
-                validateNumArgs(args, 1);
                 Repository.checkWorkingDir();
+                validateNumArgs(args, 1);
                 new Repository().status();
             }
             case "checkout" -> {
+                Repository.checkWorkingDir();
                 Repository repository = new Repository();
                 switch (args.length) {
                     case 3 -> {

@@ -107,6 +107,12 @@ public class Main {
                 String branchName = args[1];
                 new Repository().rmBranch(branchName);
             }
+            case "reset" -> {
+                Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
+                String commitId = args[1];
+                new Repository().reset(commitId);
+            }
             default -> exit("No command with that name exists.");
         }
     }

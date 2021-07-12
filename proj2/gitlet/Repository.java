@@ -336,6 +336,47 @@ public class Repository {
     }
 
     /**
+     * Get the whole commit id. Exit with message if it does not exist.
+     *
+     * @param commitId Abbreviate or Whole commit SHA1 id
+     * @return Whole commit SHA1 id
+     */
+    @SuppressWarnings("ConstantConditions")
+    private static String getActualCommitId(String commitId) {
+        if (commitId.length() < UID_LENGTH) {
+            if (commitId.length() < 4) {
+                exit("Commit id should contain at least 4 characters.");
+            }
+            String objectDirName = getObjectDirName(commitId);
+            File objectDir = join(OBJECTS_DIR, objectDirName);
+            if (!objectDir.exists()) {
+                exit("No commit with that id exists.");
+            }
+            String objectFileNamePrefix = getObjectFileName(commitId);
+            boolean isFound = false;
+            File[] objectFiles = objectDir.listFiles();
+            for (File objectFile : objectFiles) {
+                String objectFileName = objectFile.getName();
+                if (objectFileName.startsWith(objectFileNamePrefix) && isFileInstanceOf(objectFile, Commit.class)) {
+                    if (isFound) {
+                        exit("More than 1 commit has the same id prefix.");
+                    }
+                    commitId = objectDirName + objectFileName;
+                    isFound = true;
+                }
+            }
+            if (!isFound) {
+                exit("No commit with that id exists.");
+            }
+        } else {
+            if (!getObjectFile(commitId).exists()) {
+                exit("No commit with that id exists.");
+            }
+        }
+        return commitId;
+    }
+
+    /**
      * Add file to the staging area.
      *
      * @param fileName Name of the file
@@ -535,38 +576,8 @@ public class Repository {
      * @param commitId Commit SHA1 id
      * @param fileName Name of the file
      */
-    @SuppressWarnings("ConstantConditions")
     public void checkout(String commitId, String fileName) {
-        if (commitId.length() < UID_LENGTH) {
-            if (commitId.length() < 4) {
-                exit("Commit id should contain at least 4 characters.");
-            }
-            String objectDirName = getObjectDirName(commitId);
-            File objectDir = join(OBJECTS_DIR, objectDirName);
-            if (!objectDir.exists()) {
-                exit("No commit with that id exists.");
-            }
-            String objectFileNamePrefix = getObjectFileName(commitId);
-            boolean isFound = false;
-            File[] objectFiles = objectDir.listFiles();
-            for (File objectFile : objectFiles) {
-                String objectFileName = objectFile.getName();
-                if (objectFileName.startsWith(objectFileNamePrefix) && isFileInstanceOf(objectFile, Commit.class)) {
-                    if (isFound) {
-                        exit("More than 1 commit has the same id prefix.");
-                    }
-                    commitId = objectDirName + objectFileName;
-                    isFound = true;
-                }
-            }
-            if (!isFound) {
-                exit("No commit with that id exists.");
-            }
-        } else {
-            if (!getObjectFile(commitId).exists()) {
-                exit("No commit with that id exists.");
-            }
-        }
+        commitId = getActualCommitId(commitId);
         String filePath = getFileFromCWD(fileName).getPath();
         if (!Commit.fromFile(commitId).restoreTracked(filePath)) {
             exit("File does not exist in that commit.");
@@ -578,7 +589,6 @@ public class Repository {
      *
      * @param branchName Name of the branch
      */
-    @SuppressWarnings("ConstantConditions")
     public void checkoutBranch(String branchName) {
         File branchHeadFile = getBranchHeadFile(branchName);
         if (!branchHeadFile.exists()) {
@@ -587,7 +597,18 @@ public class Repository {
         if (branchName.equals(currentBranch)) {
             exit("No need to checkout the current branch.");
         }
+        String branchHeadCommitId = readContentsAsString(branchHeadFile);
+        checkoutCommit(branchHeadCommitId);
+        changeCurrentBranch(branchName);
+    }
 
+    /**
+     * Checkout to specific commit.
+     *
+     * @param commitId Commit SHA1 id
+     */
+    @SuppressWarnings("ConstantConditions")
+    private void checkoutCommit(String commitId) {
         File[] currentFiles = CWD.listFiles(File::isFile);
         Map<String, String> currentFilesMap = getFilesMap(currentFiles);
         Map<String, String> trackedFilesMap = HEADCommit.getTracked();
@@ -610,13 +631,13 @@ public class Repository {
             }
         }
 
-        Commit branchHeadCommit = getHeadCommit(branchHeadFile);
-        Map<String, String> branchHeadCommitTrackedFilesMap = branchHeadCommit.getTracked();
+        Commit targetCommit = Commit.fromFile(commitId);
+        Map<String, String> targetCommitTrackedFilesMap = targetCommit.getTracked();
 
         for (String filePath : untrackedFilePaths) {
             String currentBlobId = currentFilesMap.get(filePath);
-            String branchHeadCommitTrackedBlobId = branchHeadCommitTrackedFilesMap.get(filePath);
-            if (!currentBlobId.equals(branchHeadCommitTrackedBlobId)) {
+            String targetCommitTrackedBlobId = targetCommitTrackedFilesMap.get(filePath);
+            if (!currentBlobId.equals(targetCommitTrackedBlobId)) {
                 exit("There is an untracked file in the way; delete it, or add and commit it first.");
             }
         }
@@ -626,8 +647,7 @@ public class Repository {
         for (File file : currentFiles) {
             rm(file);
         }
-        branchHeadCommit.restoreAllTracked();
-        changeCurrentBranch(branchName);
+        targetCommit.restoreAllTracked();
     }
 
     /**
@@ -657,5 +677,16 @@ public class Repository {
             exit("Cannot remove the current branch.");
         }
         rm(branchHeadFile);
+    }
+
+    /**
+     * Reset to commit with the id.
+     *
+     * @param commitId Commit SHA1 id
+     */
+    public void reset(String commitId) {
+        commitId = getActualCommitId(commitId);
+        checkoutCommit(commitId);
+        changeBranchHead(currentBranch, commitId);
     }
 }

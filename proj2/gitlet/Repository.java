@@ -69,7 +69,7 @@ public class Repository {
     /**
      * The current branch name.
      */
-    private final String currentBranchName;
+    private final String currentBranch;
 
     /**
      * The commit that HEAD points to.
@@ -82,9 +82,9 @@ public class Repository {
         } else {
             stagingArea = new StagingArea();
         }
-        currentBranchName = getCurrentBranchName();
-        HEADCommit = getHeadCommit(currentBranchName);
-        stagingArea.setTracked(HEADCommit.getTracked());
+        currentBranch = getCurrentBranch();
+        HEADCommit = getHeadCommit(currentBranch);
+        stagingArea.setTracked(HEADCommit.getTrackedFiles());
     }
 
     /**
@@ -151,7 +151,7 @@ public class Repository {
      *
      * @return Name of the branch
      */
-    private static String getCurrentBranchName() {
+    private static String getCurrentBranch() {
         String HEADContent = readContentsAsString(HEAD);
         return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
     }
@@ -159,11 +159,11 @@ public class Repository {
     /**
      * Get head commit of the branch.
      *
-     * @param branchName Name of the branch
+     * @param branch Name of the branch
      * @return Commit instance
      */
-    private static Commit getHeadCommit(String branchName) {
-        File branchHeadFile = getBranchHeadFile(branchName);
+    private static Commit getHeadCommit(String branch) {
+        File branchHeadFile = getBranchHeadFile(branch);
         String HEADCommitId = readContentsAsString(branchHeadFile);
         return Commit.fromFile(HEADCommitId);
     }
@@ -171,20 +171,20 @@ public class Repository {
     /**
      * Get branch head ref file in refs/heads folder.
      *
-     * @param branchName Name of the branch
+     * @param branch Name of the branch
      * @return File instance
      */
-    private static File getBranchHeadFile(String branchName) {
-        return join(BRANCH_HEADS_DIR, branchName);
+    private static File getBranchHeadFile(String branch) {
+        return join(BRANCH_HEADS_DIR, branch);
     }
 
     /**
      * Change current branch.
      *
-     * @param branchName Name of the branch
+     * @param branch Name of the branch
      */
-    private static void changeCurrentBranch(String branchName) {
-        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branchName);
+    private static void changeCurrentBranch(String branch) {
+        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branch);
     }
 
     /**
@@ -199,12 +199,12 @@ public class Repository {
     /**
      * Change branch head.
      *
-     * @param branchName Name of the branch
-     * @param id         Commit SHA1 id
+     * @param branch   Name of the branch
+     * @param commitId Commit SHA1 id
      */
-    private static void changeBranchHead(String branchName, String id) {
-        File branchHeadFile = getBranchHeadFile(branchName);
-        writeContents(branchHeadFile, id);
+    private static void changeBranchHead(String branch, String commitId) {
+        File branchHeadFile = getBranchHeadFile(branch);
+        writeContents(branchHeadFile, commitId);
     }
 
     /**
@@ -232,34 +232,34 @@ public class Repository {
     @SuppressWarnings("ConstantConditions")
     private static void forEachCommitInOrder(Consumer<Commit> cb) {
         Queue<Commit> commitsToLog = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
-        Set<String> commitIds = new HashSet<>();
+        Set<String> checkedCommitIds = new HashSet<>();
 
-        File[] branchHeads = BRANCH_HEADS_DIR.listFiles();
-        Arrays.sort(branchHeads, Comparator.comparing(File::getName));
+        File[] branchHeadFiles = BRANCH_HEADS_DIR.listFiles();
+        Arrays.sort(branchHeadFiles, Comparator.comparing(File::getName));
 
-        for (File headFile : branchHeads) {
-            String headId = readContentsAsString(headFile);
-            if (commitIds.contains(headId)) {
+        for (File branchHeadFile : branchHeadFiles) {
+            String branchHeadCommitId = readContentsAsString(branchHeadFile);
+            if (checkedCommitIds.contains(branchHeadCommitId)) {
                 continue;
             }
-            commitIds.add(headId);
-            Commit headCommit = Commit.fromFile(headId);
-            commitsToLog.add(headCommit);
+            checkedCommitIds.add(branchHeadCommitId);
+            Commit branchHeadCommit = Commit.fromFile(branchHeadCommitId);
+            commitsToLog.add(branchHeadCommit);
         }
 
         while (true) {
             Commit latestCommit = commitsToLog.poll();
             cb.accept(latestCommit);
-            String[] parents = latestCommit.getParents();
-            if (parents.length == 0) {
+            String[] parentCommitIds = latestCommit.getParents();
+            if (parentCommitIds.length == 0) {
                 break;
             }
-            for (String parentId : parents) {
-                if (commitIds.contains(parentId)) {
+            for (String parentCommitId : parentCommitIds) {
+                if (checkedCommitIds.contains(parentCommitId)) {
                     continue;
                 }
-                commitIds.add(parentId);
-                Commit parentCommit = Commit.fromFile(parentId);
+                checkedCommitIds.add(parentCommitId);
+                Commit parentCommit = Commit.fromFile(parentCommitId);
                 commitsToLog.add(parentCommit);
             }
         }
@@ -268,13 +268,13 @@ public class Repository {
     /**
      * Append lines of file name in order from files paths Set to StringBuilder.
      *
-     * @param stringBuilder StringBuilder instance
-     * @param filesPathsSet Set of files paths
+     * @param stringBuilder       StringBuilder instance
+     * @param filePathsCollection Collection of file paths
      */
-    private static void appendFileNameInOrder(StringBuilder stringBuilder, Set<String> filesPathsSet) {
-        String[] filesPaths = filesPathsSet.toArray(String[]::new);
-        Arrays.sort(filesPaths);
-        for (String filePath : filesPaths) {
+    private static void appendFileNamesInOrder(StringBuilder stringBuilder, Collection<String> filePathsCollection) {
+        String[] filePaths = filePathsCollection.toArray(String[]::new);
+        Arrays.sort(filePaths);
+        for (String filePath : filePaths) {
             String fileName = Paths.get(filePath).getFileName().toString();
             stringBuilder.append(fileName).append("\n");
         }
@@ -305,11 +305,11 @@ public class Repository {
         if (stagingArea.isClean()) {
             exit("No changes added to the commit.");
         }
-        Map<String, String> newTracked = stagingArea.commit();
+        Map<String, String> newTrackedFilesMap = stagingArea.commit();
         stagingArea.save();
-        Commit newCommit = new Commit(message, new String[]{HEADCommit.getId()}, newTracked);
+        Commit newCommit = new Commit(message, new String[]{HEADCommit.getId()}, newTrackedFilesMap);
         newCommit.save();
-        changeBranchHead(currentBranchName, newCommit.getId());
+        changeBranchHead(currentBranch, newCommit.getId());
     }
 
     /**
@@ -334,12 +334,12 @@ public class Repository {
         Commit currentCommit = HEADCommit;
         while (true) {
             logBuilder.append(currentCommit.getLog()).append("\n");
-            String[] parents = currentCommit.getParents();
-            if (parents.length == 0) {
+            String[] parentCommitIds = currentCommit.getParents();
+            if (parentCommitIds.length == 0) {
                 break;
             }
-            String firstParentId = parents[0];
-            currentCommit = Commit.fromFile(firstParentId);
+            String firstParentCommitId = parentCommitIds[0];
+            currentCommit = Commit.fromFile(firstParentCommitId);
         }
         System.out.print(logBuilder);
     }
@@ -353,11 +353,11 @@ public class Repository {
 
         // branches
         statusBuilder.append("=== Branches ===").append("\n");
-        statusBuilder.append("*").append(currentBranchName).append("\n");
-        String[] branchNames = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranchName));
-        Arrays.sort(branchNames);
-        for (String branchName : branchNames) {
-            statusBuilder.append(branchName).append("\n");
+        statusBuilder.append("*").append(currentBranch).append("\n");
+        String[] branches = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranch));
+        Arrays.sort(branches);
+        for (String branch : branches) {
+            statusBuilder.append(branch).append("\n");
         }
         statusBuilder.append("\n");
         // end
@@ -365,15 +365,15 @@ public class Repository {
         Map<String, String> trackedFilesMap = stagingArea.getTracked();
         Map<String, String> addedFilesMap = stagingArea.getAdded();
         Map<String, String> modifiedFilesMap = stagingArea.getModified();
-        Set<String> removedFilesPathsSet = stagingArea.getRemoved();
+        Set<String> removedFilePathsSet = stagingArea.getRemoved();
 
         // staged files
         statusBuilder.append("=== Staged Files ===").append("\n");
-        List<String> stagedFilesPaths = new ArrayList<>();
-        stagedFilesPaths.addAll(addedFilesMap.keySet());
-        stagedFilesPaths.addAll(modifiedFilesMap.keySet());
-        stagedFilesPaths.sort(String::compareTo);
-        for (String filePath : stagedFilesPaths) {
+        List<String> stagedFilePaths = new ArrayList<>();
+        stagedFilePaths.addAll(addedFilesMap.keySet());
+        stagedFilePaths.addAll(modifiedFilesMap.keySet());
+        stagedFilePaths.sort(String::compareTo);
+        for (String filePath : stagedFilePaths) {
             String fileName = Paths.get(filePath).getFileName().toString();
             statusBuilder.append(fileName).append("\n");
         }
@@ -382,7 +382,7 @@ public class Repository {
 
         // removed files
         statusBuilder.append("=== Removed Files ===").append("\n");
-        appendFileNameInOrder(statusBuilder, removedFilesPathsSet);
+        appendFileNamesInOrder(statusBuilder, removedFilePathsSet);
         // end
 
         Map<String, String> currentFilesMap = new HashMap<>();
@@ -390,72 +390,72 @@ public class Repository {
         File[] currentFiles = CWD.listFiles(File::isFile);
         for (File file : currentFiles) {
             String filePath = file.getPath();
-            String id = Blob.generateId(file);
-            currentFilesMap.put(filePath, id);
+            String blobId = Blob.generateId(file);
+            currentFilesMap.put(filePath, blobId);
         }
 
-        Set<String> modifiedNotStageFilesPathsSet = new HashSet<>();
-        Set<String> deletedNotStageFilesPathsSet = new HashSet<>();
-        Set<String> untrackedFilesPathsSet = new HashSet<>();
+        Set<String> modifiedNotStageFilePaths = new HashSet<>();
+        Set<String> deletedNotStageFilePaths = new HashSet<>();
+        Set<String> untrackedFilePaths = new HashSet<>();
 
         for (Map.Entry<String, String> entry : trackedFilesMap.entrySet()) {
             String filePath = entry.getKey();
-            String id = entry.getValue();
-            String currentFileId = currentFilesMap.get(filePath);
-            if (currentFileId != null) {
-                if (removedFilesPathsSet.contains(filePath)) {
-                    untrackedFilesPathsSet.add(filePath);
+            String blobId = entry.getValue();
+            String currentFileBlobId = currentFilesMap.get(filePath);
+            if (currentFileBlobId != null) {
+                if (removedFilePathsSet.contains(filePath)) {
+                    untrackedFilePaths.add(filePath);
                 } else {
-                    if (currentFileId.equals(id)) {
+                    if (currentFileBlobId.equals(blobId)) {
                         if (modifiedFilesMap.containsKey(filePath)) {
-                            modifiedNotStageFilesPathsSet.add(filePath);
+                            modifiedNotStageFilePaths.add(filePath);
                         }
                     } else {
                         String modifiedFileId = modifiedFilesMap.get(filePath);
-                        if (!currentFileId.equals(modifiedFileId)) {
-                            modifiedNotStageFilesPathsSet.add(filePath);
+                        if (!currentFileBlobId.equals(modifiedFileId)) {
+                            modifiedNotStageFilePaths.add(filePath);
                         }
                     }
                 }
                 currentFilesMap.remove(filePath);
             } else {
-                if (!removedFilesPathsSet.contains(filePath)) {
-                    deletedNotStageFilesPathsSet.add(filePath);
+                if (!removedFilePathsSet.contains(filePath)) {
+                    deletedNotStageFilePaths.add(filePath);
                 }
             }
         }
 
-        String[] currentFilesPaths = currentFilesMap.keySet().toArray(String[]::new);
-        for (String filePath : currentFilesPaths) {
-            String id = currentFilesMap.get(filePath);
-            String addedFileId = addedFilesMap.get(filePath);
-            if (addedFileId != null) {
-                if (!addedFileId.equals(id)) {
-                    modifiedNotStageFilesPathsSet.add(filePath);
+        String[] currentFilePaths = currentFilesMap.keySet().toArray(String[]::new);
+        for (String filePath : currentFilePaths) {
+            String blobId = currentFilesMap.get(filePath);
+            String addedBlobId = addedFilesMap.get(filePath);
+            if (addedBlobId != null) {
+                if (!addedBlobId.equals(blobId)) {
+                    modifiedNotStageFilePaths.add(filePath);
                 }
                 addedFilesMap.remove(filePath);
             } else {
-                untrackedFilesPathsSet.add(filePath);
+                untrackedFilePaths.add(filePath);
             }
             currentFilesMap.remove(filePath);
         }
 
         for (String filePath : addedFilesMap.keySet()) {
             if (!currentFilesMap.containsKey(filePath)) {
-                deletedNotStageFilesPathsSet.add(filePath);
+                deletedNotStageFilePaths.add(filePath);
             }
         }
 
         // modifications not staged for commit
         statusBuilder.append("=== Modifications Not Staged For Commit ===").append("\n");
-        List<String> pathsOfFilesWithModificationsNotStaged = new ArrayList<>();
-        pathsOfFilesWithModificationsNotStaged.addAll(modifiedNotStageFilesPathsSet);
-        pathsOfFilesWithModificationsNotStaged.addAll(deletedNotStageFilesPathsSet);
-        pathsOfFilesWithModificationsNotStaged.sort(String::compareTo);
-        for (String filePath : pathsOfFilesWithModificationsNotStaged) {
+        List<String> pathsOfFileWithModificationsNotStaged = new ArrayList<>();
+        pathsOfFileWithModificationsNotStaged.addAll(modifiedNotStageFilePaths);
+        pathsOfFileWithModificationsNotStaged.addAll(deletedNotStageFilePaths);
+        pathsOfFileWithModificationsNotStaged.sort(String::compareTo);
+        for (String filePath : pathsOfFileWithModificationsNotStaged) {
             String fileName = Paths.get(filePath).getFileName().toString();
             statusBuilder.append(fileName);
-            if (modifiedNotStageFilesPathsSet.contains(filePath)) {
+            if (modifiedNotStageFilePaths.contains(filePath)) {
                 statusBuilder.append(" (modified)");
             } else {
                 statusBuilder.append(" (deleted)");
@@ -467,7 +467,7 @@ public class Repository {
 
         // untracked files
         statusBuilder.append("=== Untracked Files ===").append("\n");
-        appendFileNameInOrder(statusBuilder, untrackedFilesPathsSet);
+        appendFileNamesInOrder(statusBuilder, untrackedFilePaths);
         // end
 
         System.out.print(statusBuilder);

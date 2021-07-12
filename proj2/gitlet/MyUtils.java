@@ -37,11 +37,11 @@ public class MyUtils {
     /**
      * Print a message and exit with status code 0.
      *
-     * @param msg  String to print
-     * @param args Arguments referenced by the format specifiers in the format string
+     * @param message String to print
+     * @param args    Arguments referenced by the format specifiers in the format string
      */
-    public static void exit(String msg, Object... args) {
-        message(msg, args);
+    public static void exit(String message, Object... args) {
+        message(message, args);
         System.exit(0);
     }
 

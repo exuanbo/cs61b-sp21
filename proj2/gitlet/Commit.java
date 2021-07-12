@@ -34,9 +34,9 @@ public class Commit implements Serializable, Dumpable {
     private final String[] parents;
 
     /**
-     * The tracked files Map with file path as key and SHA1 id as value..
+     * The tracked files Map with file path as key and SHA1 id as value.
      */
-    private final Map<String, String> tracked;
+    private final Map<String, String> trackedFiles;
 
     /**
      * The SHA1 id.
@@ -48,11 +48,11 @@ public class Commit implements Serializable, Dumpable {
      */
     private final File file;
 
-    public Commit(String msg, String[] parentsArray, Map<String, String> trackedFilesMap) {
+    public Commit(String message, String[] parents, Map<String, String> trackedFiles) {
         date = new Date();
-        message = msg;
-        parents = parentsArray;
-        tracked = trackedFilesMap;
+        this.message = message;
+        this.parents = parents;
+        this.trackedFiles = trackedFiles;
         id = generateId();
         file = getObjectFile(id);
     }
@@ -64,7 +64,7 @@ public class Commit implements Serializable, Dumpable {
         date = new Date(0);
         message = "initial commit";
         parents = new String[0];
-        tracked = new HashMap<>();
+        trackedFiles = new HashMap<>();
         id = generateId();
         file = getObjectFile(id);
     }
@@ -85,7 +85,7 @@ public class Commit implements Serializable, Dumpable {
      * @return SHA1 id
      */
     private String generateId() {
-        return sha1(getTimestamp(), message, Arrays.toString(parents), tracked.toString());
+        return sha1(getTimestamp(), message, Arrays.toString(parents), trackedFiles.toString());
     }
 
     /**
@@ -125,9 +125,9 @@ public class Commit implements Serializable, Dumpable {
     }
 
     /**
-     * Get the parent commits id.
+     * Get the parent commit ids.
      *
-     * @return Array of parent commits id.
+     * @return Array of parent commit ids.
      */
     public String[] getParents() {
         return parents;
@@ -138,8 +138,8 @@ public class Commit implements Serializable, Dumpable {
      *
      * @return Files Map
      */
-    public Map<String, String> getTracked() {
-        return tracked;
+    public Map<String, String> getTrackedFiles() {
+        return trackedFiles;
     }
 
     /**
@@ -173,6 +173,6 @@ public class Commit implements Serializable, Dumpable {
     }
 
     public void dump() {
-        System.out.println(getLog() + tracked);
+        System.out.println(getLog() + trackedFiles);
     }
 }

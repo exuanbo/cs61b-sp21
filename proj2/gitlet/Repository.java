@@ -266,6 +266,22 @@ public class Repository {
     }
 
     /**
+     * Append lines of file name in order from files paths Set to StringBuilder.
+     *
+     * @param stringBuilder StringBuilder instance
+     * @param filesPathsSet Set of files paths
+     */
+    private static void appendFileNameInOrder(StringBuilder stringBuilder, Set<String> filesPathsSet) {
+        String[] filesPaths = filesPathsSet.toArray(String[]::new);
+        Arrays.sort(filesPaths);
+        for (String filePath : filesPaths) {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            stringBuilder.append(fileName).append("\n");
+        }
+        stringBuilder.append("\n");
+    }
+
+    /**
      * Add file to the staging area.
      *
      * @param fileName Name of the file
@@ -344,7 +360,7 @@ public class Repository {
             statusBuilder.append(branchName).append("\n");
         }
         statusBuilder.append("\n");
-        // end branches
+        // end
 
         Map<String, String> trackedFilesMap = stagingArea.getTracked();
         Map<String, String> addedFilesMap = stagingArea.getAdded();
@@ -362,18 +378,12 @@ public class Repository {
             statusBuilder.append(fileName).append("\n");
         }
         statusBuilder.append("\n");
-        // end staged files
+        // end
 
         // removed files
         statusBuilder.append("=== Removed Files ===").append("\n");
-        String[] removedFilesPaths = removedFilesPathsSet.toArray(String[]::new);
-        Arrays.sort(removedFilesPaths);
-        for (String filePath : removedFilesPaths) {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            statusBuilder.append(fileName).append("\n");
-        }
-        statusBuilder.append("\n");
-        // end removed files
+        appendFileNameInOrder(statusBuilder, removedFilesPathsSet);
+        // end
 
         Map<String, String> currentFilesMap = new HashMap<>();
 
@@ -452,18 +462,12 @@ public class Repository {
             statusBuilder.append("\n");
         }
         statusBuilder.append("\n");
-        // end modifications not staged for commit
+        // end
 
         // untracked files
         statusBuilder.append("=== Untracked Files ===").append("\n");
-        String[] untrackedFilesPaths = untrackedFilesPathsSet.toArray(String[]::new);
-        Arrays.sort(untrackedFilesPaths);
-        for (String filePath : untrackedFilesPaths) {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            statusBuilder.append(fileName).append("\n");
-        }
-        statusBuilder.append("\n");
-        // end untracked files
+        appendFileNameInOrder(statusBuilder, untrackedFilesPathsSet);
+        // end
 
         System.out.print(statusBuilder);
     }

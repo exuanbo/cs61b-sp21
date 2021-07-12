@@ -158,11 +158,11 @@ public class Repository {
     /**
      * Get head commit of the branch.
      *
-     * @param branch Name of the branch
+     * @param branchName Name of the branch
      * @return Commit instance
      */
-    private static Commit getHeadCommit(String branch) {
-        File branchHeadFile = getBranchHeadFile(branch);
+    private static Commit getHeadCommit(String branchName) {
+        File branchHeadFile = getBranchHeadFile(branchName);
         return getHeadCommit(branchHeadFile);
     }
 
@@ -180,20 +180,20 @@ public class Repository {
     /**
      * Get branch head ref file in refs/heads folder.
      *
-     * @param branch Name of the branch
+     * @param branchName Name of the branch
      * @return File instance
      */
-    private static File getBranchHeadFile(String branch) {
-        return join(BRANCH_HEADS_DIR, branch);
+    private static File getBranchHeadFile(String branchName) {
+        return join(BRANCH_HEADS_DIR, branchName);
     }
 
     /**
      * Change current branch.
      *
-     * @param branch Name of the branch
+     * @param branchName Name of the branch
      */
-    private static void changeCurrentBranch(String branch) {
-        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branch);
+    private static void changeCurrentBranch(String branchName) {
+        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branchName);
     }
 
     /**
@@ -208,11 +208,11 @@ public class Repository {
     /**
      * Change branch head.
      *
-     * @param branch   Name of the branch
-     * @param commitId Commit SHA1 id
+     * @param branchName Name of the branch
+     * @param commitId   Commit SHA1 id
      */
-    private static void changeBranchHead(String branch, String commitId) {
-        File branchHeadFile = getBranchHeadFile(branch);
+    private static void changeBranchHead(String branchName, String commitId) {
+        File branchHeadFile = getBranchHeadFile(branchName);
         writeContents(branchHeadFile, commitId);
     }
 
@@ -398,10 +398,10 @@ public class Repository {
         // branches
         statusBuilder.append("=== Branches ===").append("\n");
         statusBuilder.append("*").append(currentBranch).append("\n");
-        String[] branches = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranch));
-        Arrays.sort(branches);
-        for (String branch : branches) {
-            statusBuilder.append(branch).append("\n");
+        String[] branchNames = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranch));
+        Arrays.sort(branchNames);
+        for (String branchName : branchNames) {
+            statusBuilder.append(branchName).append("\n");
         }
         statusBuilder.append("\n");
         // end
@@ -566,15 +566,15 @@ public class Repository {
     /**
      * Checkout to branch.
      *
-     * @param branch Name of the branch
+     * @param branchName Name of the branch
      */
     @SuppressWarnings("ConstantConditions")
-    public void checkoutBranch(String branch) {
-        File branchHeadFile = getBranchHeadFile(branch);
+    public void checkoutBranch(String branchName) {
+        File branchHeadFile = getBranchHeadFile(branchName);
         if (!branchHeadFile.exists()) {
             exit("No such branch exists.");
         }
-        if (branch.equals(currentBranch)) {
+        if (branchName.equals(currentBranch)) {
             exit("No need to checkout the current branch.");
         }
 
@@ -617,6 +617,6 @@ public class Repository {
             rm(file);
         }
         branchHeadCommit.restoreAllTracked();
-        changeCurrentBranch(branch);
+        changeCurrentBranch(branchName);
     }
 }

@@ -642,4 +642,20 @@ public class Repository {
         }
         changeBranchHead(branchHeadFile, HEADCommit.getId());
     }
+
+    /**
+     * Delete the branch.
+     *
+     * @param branchName Name of the branch
+     */
+    public void rmBranch(String branchName) {
+        File branchHeadFile = getBranchHeadFile(branchName);
+        if (!branchHeadFile.exists()) {
+            exit("A branch with that name does not exist.");
+        }
+        if (branchName.equals(currentBranch)) {
+            exit("Cannot remove the current branch.");
+        }
+        rm(branchHeadFile);
+    }
 }

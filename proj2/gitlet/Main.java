@@ -101,6 +101,12 @@ public class Main {
                 String branchName = args[1];
                 new Repository().branch(branchName);
             }
+            case "rm-branch" -> {
+                Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
+                String branchName = args[1];
+                new Repository().rmBranch(branchName);
+            }
             default -> exit("No command with that name exists.");
         }
     }

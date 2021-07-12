@@ -95,6 +95,12 @@ public class Main {
                     default -> exit("Incorrect operands.");
                 }
             }
+            case "branch" -> {
+                Repository.checkWorkingDir();
+                validateNumArgs(args, 2);
+                String branchName = args[1];
+                new Repository().branch(branchName);
+            }
             default -> exit("No command with that name exists.");
         }
     }

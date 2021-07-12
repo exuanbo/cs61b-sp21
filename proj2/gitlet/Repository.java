@@ -619,4 +619,17 @@ public class Repository {
         branchHeadCommit.restoreAllTracked();
         changeCurrentBranch(branchName);
     }
+
+    /**
+     * Create a new branch.
+     *
+     * @param branchName Name of the branch
+     */
+    public void branch(String branchName) {
+        File branchHeadFile = getBranchHeadFile(branchName);
+        if (branchHeadFile.exists()) {
+            exit("A branch with that name already exists.");
+        }
+        writeContents(branchHeadFile, HEADCommit.getId());
+    }
 }

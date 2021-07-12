@@ -213,6 +213,16 @@ public class Repository {
      */
     private static void changeBranchHead(String branchName, String commitId) {
         File branchHeadFile = getBranchHeadFile(branchName);
+        changeBranchHead(branchHeadFile, commitId);
+    }
+
+    /**
+     * Change branch head.
+     *
+     * @param branchHeadFile File instance
+     * @param commitId       Commit SHA1 id
+     */
+    private static void changeBranchHead(File branchHeadFile, String commitId) {
         writeContents(branchHeadFile, commitId);
     }
 
@@ -630,6 +640,6 @@ public class Repository {
         if (branchHeadFile.exists()) {
             exit("A branch with that name already exists.");
         }
-        writeContents(branchHeadFile, HEADCommit.getId());
+        changeBranchHead(branchHeadFile, HEADCommit.getId());
     }
 }

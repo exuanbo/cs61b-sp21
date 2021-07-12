@@ -425,7 +425,8 @@ public class Repository {
             }
         }
 
-        for (String filePath : currentFilesMap.keySet().toArray(String[]::new)) {
+        String[] currentFilesPaths = currentFilesMap.keySet().toArray(String[]::new);
+        for (String filePath : currentFilesPaths) {
             String id = currentFilesMap.get(filePath);
             String addedFileId = addedFilesMap.get(filePath);
             if (addedFileId != null) {
@@ -447,11 +448,11 @@ public class Repository {
 
         // modifications not staged for commit
         statusBuilder.append("=== Modifications Not Staged For Commit ===").append("\n");
-        List<String> modificationsNotStaged = new ArrayList<>();
-        modificationsNotStaged.addAll(modifiedNotStageFilesPathsSet);
-        modificationsNotStaged.addAll(deletedNotStageFilesPathsSet);
-        modificationsNotStaged.sort(String::compareTo);
-        for (String filePath : modificationsNotStaged) {
+        List<String> pathsOfFilesWithModificationsNotStaged = new ArrayList<>();
+        pathsOfFilesWithModificationsNotStaged.addAll(modifiedNotStageFilesPathsSet);
+        pathsOfFilesWithModificationsNotStaged.addAll(deletedNotStageFilesPathsSet);
+        pathsOfFilesWithModificationsNotStaged.sort(String::compareTo);
+        for (String filePath : pathsOfFilesWithModificationsNotStaged) {
             String fileName = Paths.get(filePath).getFileName().toString();
             statusBuilder.append(fileName);
             if (modifiedNotStageFilesPathsSet.contains(filePath)) {

@@ -38,9 +38,22 @@ public class Blob implements Serializable, Dumpable {
 
     public Blob(File sourceFile) {
         source = sourceFile;
+        String filePath = sourceFile.getPath();
         content = readContents(sourceFile);
-        id = sha1(sourceFile.getPath(), content);
+        id = sha1(filePath, content);
         file = getObjectFile(id);
+    }
+
+    /**
+     * Generate SH1 id.
+     *
+     * @param sourceFile File instance
+     * @return SHA1 id
+     */
+    public static String generateId(File sourceFile) {
+        String filePath = sourceFile.getPath();
+        byte[] fileContent = readContents(sourceFile);
+        return sha1(filePath, fileContent);
     }
 
     /**

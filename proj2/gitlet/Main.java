@@ -64,6 +64,11 @@ public class Main {
                 }
                 Repository.find(message);
             }
+            case "status" -> {
+                validateNumArgs(args, 1);
+                Repository.checkWorkingDir();
+                new Repository().status();
+            }
             default -> exit("No command with that name exists.");
         }
     }

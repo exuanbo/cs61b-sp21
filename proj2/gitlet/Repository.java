@@ -327,4 +327,144 @@ public class Repository {
         }
         System.out.print(logBuilder);
     }
+
+    /**
+     * Print the status.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public void status() {
+        StringBuilder statusBuilder = new StringBuilder();
+
+        // branches
+        statusBuilder.append("=== Branches ===").append("\n");
+        statusBuilder.append("*").append(currentBranchName).append("\n");
+        String[] branchNames = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranchName));
+        Arrays.sort(branchNames);
+        for (String branchName : branchNames) {
+            statusBuilder.append(branchName).append("\n");
+        }
+        statusBuilder.append("\n");
+        // end branches
+
+        Map<String, String> trackedFilesMap = stagingArea.getTracked();
+        Map<String, String> addedFilesMap = stagingArea.getAdded();
+        Map<String, String> modifiedFilesMap = stagingArea.getModified();
+        Set<String> removedFilesPathsSet = stagingArea.getRemoved();
+
+        // staged files
+        statusBuilder.append("=== Staged Files ===").append("\n");
+        List<String> stagedFilesPaths = new ArrayList<>();
+        stagedFilesPaths.addAll(addedFilesMap.keySet());
+        stagedFilesPaths.addAll(modifiedFilesMap.keySet());
+        stagedFilesPaths.sort(String::compareTo);
+        for (String filePath : stagedFilesPaths) {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            statusBuilder.append(fileName).append("\n");
+        }
+        statusBuilder.append("\n");
+        // end staged files
+
+        // removed files
+        statusBuilder.append("=== Removed Files ===").append("\n");
+        String[] removedFilesPaths = removedFilesPathsSet.toArray(String[]::new);
+        Arrays.sort(removedFilesPaths);
+        for (String filePath : removedFilesPaths) {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            statusBuilder.append(fileName).append("\n");
+        }
+        statusBuilder.append("\n");
+        // end removed files
+
+        Map<String, String> currentFilesMap = new HashMap<>();
+
+        File[] currentFiles = CWD.listFiles(File::isFile);
+        for (File file : currentFiles) {
+            String filePath = file.getPath();
+            String id = Blob.generateId(file);
+            currentFilesMap.put(filePath, id);
+        }
+
+        Set<String> modifiedNotStageFilesPathsSet = new HashSet<>();
+        Set<String> deletedNotStageFilesPathsSet = new HashSet<>();
+        Set<String> untrackedFilesPathsSet = new HashSet<>();
+
+        for (Map.Entry<String, String> entry : trackedFilesMap.entrySet()) {
+            String filePath = entry.getKey();
+            String id = entry.getValue();
+            String currentFileId = currentFilesMap.get(filePath);
+            if (currentFileId != null) {
+                if (removedFilesPathsSet.contains(filePath)) {
+                    untrackedFilesPathsSet.add(filePath);
+                } else {
+                    if (currentFileId.equals(id)) {
+                        if (modifiedFilesMap.containsKey(filePath)) {
+                            modifiedNotStageFilesPathsSet.add(filePath);
+                        }
+                    } else {
+                        String modifiedFileId = modifiedFilesMap.get(filePath);
+                        if (!currentFileId.equals(modifiedFileId)) {
+                            modifiedNotStageFilesPathsSet.add(filePath);
+                        }
+                    }
+                }
+                currentFilesMap.remove(filePath);
+            } else {
+                if (!removedFilesPathsSet.contains(filePath)) {
+                    deletedNotStageFilesPathsSet.add(filePath);
+                }
+            }
+        }
+
+        for (String filePath : currentFilesMap.keySet().toArray(String[]::new)) {
+            String id = currentFilesMap.get(filePath);
+            String addedFileId = addedFilesMap.get(filePath);
+            if (addedFileId != null) {
+                if (!addedFileId.equals(id)) {
+                    modifiedNotStageFilesPathsSet.add(filePath);
+                }
+                addedFilesMap.remove(filePath);
+            } else {
+                untrackedFilesPathsSet.add(filePath);
+            }
+            currentFilesMap.remove(filePath);
+        }
+
+        for (String filePath : addedFilesMap.keySet()) {
+            if (!currentFilesMap.containsKey(filePath)) {
+                deletedNotStageFilesPathsSet.add(filePath);
+            }
+        }
+
+        // modifications not staged for commit
+        statusBuilder.append("=== Modifications Not Staged For Commit ===").append("\n");
+        List<String> modificationsNotStaged = new ArrayList<>();
+        modificationsNotStaged.addAll(modifiedNotStageFilesPathsSet);
+        modificationsNotStaged.addAll(deletedNotStageFilesPathsSet);
+        modificationsNotStaged.sort(String::compareTo);
+        for (String filePath : modificationsNotStaged) {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            statusBuilder.append(fileName);
+            if (modifiedNotStageFilesPathsSet.contains(filePath)) {
+                statusBuilder.append(" (modified)");
+            } else {
+                statusBuilder.append(" (deleted)");
+            }
+            statusBuilder.append("\n");
+        }
+        statusBuilder.append("\n");
+        // end modifications not staged for commit
+
+        // untracked files
+        statusBuilder.append("=== Untracked Files ===").append("\n");
+        String[] untrackedFilesPaths = untrackedFilesPathsSet.toArray(String[]::new);
+        Arrays.sort(untrackedFilesPaths);
+        for (String filePath : untrackedFilesPaths) {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            statusBuilder.append(fileName).append("\n");
+        }
+        statusBuilder.append("\n");
+        // end untracked files
+
+        System.out.print(statusBuilder);
+    }
 }

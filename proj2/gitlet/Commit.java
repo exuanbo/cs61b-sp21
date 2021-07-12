@@ -36,7 +36,7 @@ public class Commit implements Serializable, Dumpable {
     /**
      * The tracked files Map with file path as key and SHA1 id as value.
      */
-    private final Map<String, String> trackedFiles;
+    private final Map<String, String> tracked;
 
     /**
      * The SHA1 id.
@@ -48,11 +48,11 @@ public class Commit implements Serializable, Dumpable {
      */
     private final File file;
 
-    public Commit(String message, String[] parents, Map<String, String> trackedFiles) {
+    public Commit(String message, String[] parents, Map<String, String> trackedFilesMap) {
         date = new Date();
         this.message = message;
         this.parents = parents;
-        this.trackedFiles = trackedFiles;
+        this.tracked = trackedFilesMap;
         id = generateId();
         file = getObjectFile(id);
     }
@@ -64,7 +64,7 @@ public class Commit implements Serializable, Dumpable {
         date = new Date(0);
         message = "initial commit";
         parents = new String[0];
-        trackedFiles = new HashMap<>();
+        tracked = new HashMap<>();
         id = generateId();
         file = getObjectFile(id);
     }
@@ -85,7 +85,7 @@ public class Commit implements Serializable, Dumpable {
      * @return SHA1 id
      */
     private String generateId() {
-        return sha1(getTimestamp(), message, Arrays.toString(parents), trackedFiles.toString());
+        return sha1(getTimestamp(), message, Arrays.toString(parents), tracked.toString());
     }
 
     /**
@@ -136,10 +136,10 @@ public class Commit implements Serializable, Dumpable {
     /**
      * Get the tracked files Map with file path as key and SHA1 id as value.
      *
-     * @return Files Map
+     * @return Map with file path as key and SHA1 id as value
      */
-    public Map<String, String> getTrackedFiles() {
-        return trackedFiles;
+    public Map<String, String> getTracked() {
+        return tracked;
     }
 
     /**
@@ -173,6 +173,6 @@ public class Commit implements Serializable, Dumpable {
     }
 
     public void dump() {
-        System.out.println(getLog() + trackedFiles);
+        System.out.println(getLog() + tracked);
     }
 }

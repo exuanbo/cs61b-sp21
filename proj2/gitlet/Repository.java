@@ -84,7 +84,7 @@ public class Repository {
         }
         currentBranch = getCurrentBranch();
         HEADCommit = getHeadCommit(currentBranch);
-        stagingArea.setTracked(HEADCommit.getTrackedFiles());
+        stagingArea.setTracked(HEADCommit.getTracked());
     }
 
     /**

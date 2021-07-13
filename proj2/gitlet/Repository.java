@@ -579,13 +579,30 @@ public class Repository {
      */
     @SuppressWarnings("ConstantConditions")
     private void checkoutCommit(String commitId) {
+        Commit targetCommit = Commit.fromFile(commitId);
         File[] currentFiles = CWD.listFiles(File::isFile);
+        checkUntracked(targetCommit, currentFiles);
+
+        stagingArea.clear();
+        stagingArea.save();
+        for (File file : currentFiles) {
+            rm(file);
+        }
+        targetCommit.restoreAllTracked();
+    }
+
+    /**
+     * Exit with message if target commit would overwrite the untracked files.
+     *
+     * @param targetCommit Commit SHA1 id
+     */
+    private void checkUntracked(Commit targetCommit, File[] currentFiles) {
         Map<String, String> currentFilesMap = getFilesMap(currentFiles);
         Map<String, String> trackedFilesMap = HEADCommit.getTracked();
         Map<String, String> addedFilesMap = stagingArea.getAdded();
         Set<String> removedFilePathsSet = stagingArea.getRemoved();
 
-        Set<String> untrackedFilePaths = new HashSet<>();
+        List<String> untrackedFilePaths = new ArrayList<>();
 
         for (String filePath : currentFilesMap.keySet()) {
             if (trackedFilesMap.containsKey(filePath)) {
@@ -599,7 +616,6 @@ public class Repository {
             }
         }
 
-        Commit targetCommit = Commit.fromFile(commitId);
         Map<String, String> targetCommitTrackedFilesMap = targetCommit.getTracked();
 
         for (String filePath : untrackedFilePaths) {
@@ -609,13 +625,6 @@ public class Repository {
                 exit("There is an untracked file in the way; delete it, or add and commit it first.");
             }
         }
-
-        stagingArea.clear();
-        stagingArea.save();
-        for (File file : currentFiles) {
-            rm(file);
-        }
-        targetCommit.restoreAllTracked();
     }
 
     /**

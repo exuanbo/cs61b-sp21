@@ -617,17 +617,15 @@ public class Repository {
 
         Set<String> untrackedFilePaths = new HashSet<>();
 
-        for (String filePath : trackedFilesMap.keySet()) {
-            if (currentFilesMap.containsKey(filePath)) {
+        for (String filePath : currentFilesMap.keySet()) {
+            if (trackedFilesMap.containsKey(filePath)) {
                 if (removedFilePathsSet.contains(filePath)) {
                     untrackedFilePaths.add(filePath);
                 }
-                currentFilesMap.remove(filePath);
-            }
-        }
-        for (String filePath : currentFilesMap.keySet()) {
-            if (!addedFilesMap.containsKey(filePath)) {
-                untrackedFilePaths.add(filePath);
+            } else {
+                if (!addedFilesMap.containsKey(filePath)) {
+                    untrackedFilePaths.add(filePath);
+                }
             }
         }
 
@@ -635,9 +633,9 @@ public class Repository {
         Map<String, String> targetCommitTrackedFilesMap = targetCommit.getTracked();
 
         for (String filePath : untrackedFilePaths) {
-            String currentBlobId = currentFilesMap.get(filePath);
-            String targetCommitTrackedBlobId = targetCommitTrackedFilesMap.get(filePath);
-            if (!currentBlobId.equals(targetCommitTrackedBlobId)) {
+            String blobId = currentFilesMap.get(filePath);
+            String targetBlobId = targetCommitTrackedFilesMap.get(filePath);
+            if (!blobId.equals(targetBlobId)) {
                 exit("There is an untracked file in the way; delete it, or add and commit it first.");
             }
         }

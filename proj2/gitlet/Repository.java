@@ -457,18 +457,12 @@ public class Repository {
         statusBuilder.append("\n");
         // end
 
-        Map<String, String> currentFilesMap = getCurrentFilesMap();
-        Map<String, String> trackedFilesMap = HEADCommit.getTracked();
         Map<String, String> addedFilesMap = stagingArea.getAdded();
-        Map<String, String> modifiedFilesMap = stagingArea.getModified();
         Set<String> removedFilePathsSet = stagingArea.getRemoved();
 
         // staged files
         statusBuilder.append("=== Staged Files ===").append("\n");
-        List<String> stagedFilePaths = new ArrayList<>();
-        stagedFilePaths.addAll(addedFilesMap.keySet());
-        stagedFilePaths.addAll(modifiedFilesMap.keySet());
-        appendFileNamesInOrder(statusBuilder, stagedFilePaths);
+        appendFileNamesInOrder(statusBuilder, addedFilesMap.keySet());
         statusBuilder.append("\n");
         // end
 
@@ -478,71 +472,47 @@ public class Repository {
         statusBuilder.append("\n");
         // end
 
-        Set<String> modifiedNotStageFilePaths = new HashSet<>();
+        // modifications not staged for commit
+        statusBuilder.append("=== Modifications Not Staged For Commit ===").append("\n");
+        List<String> modifiedNotStageFilePaths = new ArrayList<>();
         Set<String> deletedNotStageFilePaths = new HashSet<>();
-        Set<String> untrackedFilePaths = new HashSet<>();
+
+        Map<String, String> currentFilesMap = getCurrentFilesMap();
+        Map<String, String> trackedFilesMap = HEADCommit.getTracked();
+
+        trackedFilesMap.putAll(addedFilesMap);
+        for (String filePath : removedFilePathsSet) {
+            trackedFilesMap.remove(filePath);
+        }
 
         for (Map.Entry<String, String> entry : trackedFilesMap.entrySet()) {
             String filePath = entry.getKey();
             String blobId = entry.getValue();
             String currentFileBlobId = currentFilesMap.get(filePath);
             if (currentFileBlobId != null) {
-                if (removedFilePathsSet.contains(filePath)) {
-                    untrackedFilePaths.add(filePath);
-                } else {
-                    if (currentFileBlobId.equals(blobId)) {
-                        if (modifiedFilesMap.containsKey(filePath)) {
-                            modifiedNotStageFilePaths.add(filePath);
-                        }
-                    } else {
-                        String modifiedFileId = modifiedFilesMap.get(filePath);
-                        if (!currentFileBlobId.equals(modifiedFileId)) {
-                            modifiedNotStageFilePaths.add(filePath);
-                        }
-                    }
+                if (!currentFileBlobId.equals(blobId)) {
+                    // 1. Tracked in the current commit, changed in the working directory, but not staged; or
+                    // 2. Staged for addition, but with different contents than in the working directory.
+                    modifiedNotStageFilePaths.add(filePath);
                 }
                 currentFilesMap.remove(filePath);
             } else {
-                if (!removedFilePathsSet.contains(filePath)) {
-                    deletedNotStageFilePaths.add(filePath);
-                }
-            }
-        }
-
-        String[] currentFilePaths = currentFilesMap.keySet().toArray(String[]::new);
-        for (String filePath : currentFilePaths) {
-            String blobId = currentFilesMap.get(filePath);
-            String addedBlobId = addedFilesMap.get(filePath);
-            if (addedBlobId != null) {
-                if (!addedBlobId.equals(blobId)) {
-                    modifiedNotStageFilePaths.add(filePath);
-                }
-                addedFilesMap.remove(filePath);
-            } else {
-                untrackedFilePaths.add(filePath);
-            }
-            currentFilesMap.remove(filePath);
-        }
-
-        for (String filePath : addedFilesMap.keySet()) {
-            if (!currentFilesMap.containsKey(filePath)) {
+                // 3. Staged for addition, but deleted in the working directory; or
+                // 4. Not staged for removal, but tracked in the current commit and deleted from the working directory.
+                modifiedNotStageFilePaths.add(filePath);
                 deletedNotStageFilePaths.add(filePath);
             }
         }
 
-        // modifications not staged for commit
-        statusBuilder.append("=== Modifications Not Staged For Commit ===").append("\n");
-        List<String> pathsOfFileWithModificationsNotStaged = new ArrayList<>();
-        pathsOfFileWithModificationsNotStaged.addAll(modifiedNotStageFilePaths);
-        pathsOfFileWithModificationsNotStaged.addAll(deletedNotStageFilePaths);
-        pathsOfFileWithModificationsNotStaged.sort(String::compareTo);
-        for (String filePath : pathsOfFileWithModificationsNotStaged) {
+        modifiedNotStageFilePaths.sort(String::compareTo);
+
+        for (String filePath : modifiedNotStageFilePaths) {
             String fileName = Paths.get(filePath).getFileName().toString();
             statusBuilder.append(fileName);
-            if (modifiedNotStageFilePaths.contains(filePath)) {
-                statusBuilder.append(" (modified)");
-            } else {
+            if (deletedNotStageFilePaths.contains(filePath)) {
                 statusBuilder.append(" (deleted)");
+            } else {
+                statusBuilder.append(" (modified)");
             }
             statusBuilder.append("\n");
         }
@@ -551,7 +521,7 @@ public class Repository {
 
         // untracked files
         statusBuilder.append("=== Untracked Files ===").append("\n");
-        appendFileNamesInOrder(statusBuilder, untrackedFilePaths);
+        appendFileNamesInOrder(statusBuilder, currentFilesMap.keySet());
         statusBuilder.append("\n");
         // end
 

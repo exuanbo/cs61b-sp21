@@ -24,11 +24,6 @@ public class StagingArea implements Serializable, Dumpable {
     private final Map<String, String> added = new HashMap<>();
 
     /**
-     * The modified files Map with file path as key and SHA1 id as value.
-     */
-    private final Map<String, String> modified = new HashMap<>();
-
-    /**
      * The removed files Set with file path as key.
      */
     private final Set<String> removed = new HashSet<>();
@@ -66,15 +61,6 @@ public class StagingArea implements Serializable, Dumpable {
     }
 
     /**
-     * Get modifies files Map.
-     *
-     * @return Map with file path as key and SHA1 id as value.
-     */
-    public Map<String, String> getModified() {
-        return modified;
-    }
-
-    /**
      * Get removed files Set.
      *
      * @return Set of files paths.
@@ -97,7 +83,7 @@ public class StagingArea implements Serializable, Dumpable {
      * @return true if is clean
      */
     public boolean isClean() {
-        return added.isEmpty() && modified.isEmpty() && removed.isEmpty();
+        return added.isEmpty() && removed.isEmpty();
     }
 
     /**
@@ -105,7 +91,6 @@ public class StagingArea implements Serializable, Dumpable {
      */
     public void clear() {
         added.clear();
-        modified.clear();
         removed.clear();
     }
 
@@ -116,7 +101,6 @@ public class StagingArea implements Serializable, Dumpable {
      */
     public Map<String, String> commit() {
         tracked.putAll(added);
-        tracked.putAll(modified);
         for (String filePath : removed) {
             tracked.remove(filePath);
         }
@@ -136,20 +120,17 @@ public class StagingArea implements Serializable, Dumpable {
         Blob blob = new Blob(file);
         String blobId = blob.getId();
 
-        boolean isModified = false;
-
         String trackedBlobId = tracked.get(filePath);
         if (trackedBlobId != null) {
             if (trackedBlobId.equals(blobId)) {
-                if (modified.remove(filePath) != null) {
+                if (added.remove(filePath) != null) {
                     return true;
                 }
                 return removed.remove(filePath);
             }
-            isModified = true;
         }
 
-        String prevBlobId = (isModified ? modified : added).put(filePath, blobId);
+        String prevBlobId = added.put(filePath, blobId);
         if (prevBlobId != null && prevBlobId.equals(blobId)) {
             return false;
         }
@@ -175,18 +156,15 @@ public class StagingArea implements Serializable, Dumpable {
         }
 
         if (tracked.get(filePath) != null) {
-            modified.remove(filePath);
-            removed.add(filePath);
             if (file.exists()) {
                 rm(file);
             }
-            return true;
+            return removed.add(filePath);
         }
-
         return false;
     }
 
     public void dump() {
-        System.out.printf("added: %s\nmodified: %s\nremoved: %s", added, modified, removed);
+        System.out.printf("added: %s\nremoved: %s", added, removed);
     }
 }

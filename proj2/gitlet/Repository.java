@@ -82,7 +82,7 @@ public class Repository {
             stagingArea = new StagingArea();
         }
         currentBranch = getCurrentBranch();
-        HEADCommit = getHeadCommit(currentBranch);
+        HEADCommit = getBranchHeadCommit(currentBranch);
         stagingArea.setTracked(HEADCommit.getTracked());
     }
 
@@ -114,7 +114,7 @@ public class Repository {
         mkdir(REFS_DIR);
         mkdir(BRANCH_HEADS_DIR);
         mkdir(OBJECTS_DIR);
-        changeCurrentBranch(DEFAULT_BRANCH_NAME);
+        setCurrentBranch(DEFAULT_BRANCH_NAME);
         createInitialCommit();
     }
 
@@ -156,14 +156,23 @@ public class Repository {
     }
 
     /**
+     * Set current branch.
+     *
+     * @param branchName Name of the branch
+     */
+    private static void setCurrentBranch(String branchName) {
+        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branchName);
+    }
+
+    /**
      * Get head commit of the branch.
      *
      * @param branchName Name of the branch
      * @return Commit instance
      */
-    private static Commit getHeadCommit(String branchName) {
+    private static Commit getBranchHeadCommit(String branchName) {
         File branchHeadFile = getBranchHeadFile(branchName);
-        return getHeadCommit(branchHeadFile);
+        return getBranchHeadCommit(branchHeadFile);
     }
 
     /**
@@ -172,9 +181,30 @@ public class Repository {
      * @param branchHeadFile File instance
      * @return Commit instance
      */
-    private static Commit getHeadCommit(File branchHeadFile) {
+    private static Commit getBranchHeadCommit(File branchHeadFile) {
         String HEADCommitId = readContentsAsString(branchHeadFile);
         return Commit.fromFile(HEADCommitId);
+    }
+
+    /**
+     * Set branch head.
+     *
+     * @param branchName Name of the branch
+     * @param commitId   Commit SHA1 id
+     */
+    private static void setBranchHeadCommit(String branchName, String commitId) {
+        File branchHeadFile = getBranchHeadFile(branchName);
+        setBranchHeadCommit(branchHeadFile, commitId);
+    }
+
+    /**
+     * Set branch head.
+     *
+     * @param branchHeadFile File instance
+     * @param commitId       Commit SHA1 id
+     */
+    private static void setBranchHeadCommit(File branchHeadFile, String commitId) {
+        writeContents(branchHeadFile, commitId);
     }
 
     /**
@@ -188,42 +218,12 @@ public class Repository {
     }
 
     /**
-     * Change current branch.
-     *
-     * @param branchName Name of the branch
-     */
-    private static void changeCurrentBranch(String branchName) {
-        writeContents(HEAD, HEAD_BRANCH_REF_PREFIX + branchName);
-    }
-
-    /**
      * Create an initial commit.
      */
     private static void createInitialCommit() {
         Commit initialCommit = new Commit();
         initialCommit.save();
-        changeBranchHead(DEFAULT_BRANCH_NAME, initialCommit.getId());
-    }
-
-    /**
-     * Change branch head.
-     *
-     * @param branchName Name of the branch
-     * @param commitId   Commit SHA1 id
-     */
-    private static void changeBranchHead(String branchName, String commitId) {
-        File branchHeadFile = getBranchHeadFile(branchName);
-        changeBranchHead(branchHeadFile, commitId);
-    }
-
-    /**
-     * Change branch head.
-     *
-     * @param branchHeadFile File instance
-     * @param commitId       Commit SHA1 id
-     */
-    private static void changeBranchHead(File branchHeadFile, String commitId) {
-        writeContents(branchHeadFile, commitId);
+        setBranchHeadCommit(DEFAULT_BRANCH_NAME, initialCommit.getId());
     }
 
     /**
@@ -404,7 +404,7 @@ public class Repository {
         stagingArea.save();
         Commit newCommit = new Commit(message, new String[]{HEADCommit.getId()}, newTrackedFilesMap);
         newCommit.save();
-        changeBranchHead(currentBranch, newCommit.getId());
+        setBranchHeadCommit(currentBranch, newCommit.getId());
     }
 
     /**
@@ -567,9 +567,9 @@ public class Repository {
         if (branchName.equals(currentBranch)) {
             exit("No need to checkout the current branch.");
         }
-        String branchHeadCommitId = readContentsAsString(branchHeadFile);
-        checkoutCommit(branchHeadCommitId);
-        changeCurrentBranch(branchName);
+        Commit branchHeadCommit = getBranchHeadCommit(branchHeadFile);
+        checkoutCommit(branchHeadCommit);
+        setCurrentBranch(branchName);
     }
 
     /**
@@ -577,9 +577,18 @@ public class Repository {
      *
      * @param commitId Commit SHA1 id
      */
-    @SuppressWarnings("ConstantConditions")
     private void checkoutCommit(String commitId) {
         Commit targetCommit = Commit.fromFile(commitId);
+        checkoutCommit(targetCommit);
+    }
+
+    /**
+     * Checkout to specific commit.
+     *
+     * @param targetCommit Commit instance
+     */
+    @SuppressWarnings("ConstantConditions")
+    private void checkoutCommit(Commit targetCommit) {
         File[] currentFiles = CWD.listFiles(File::isFile);
         checkUntracked(targetCommit, currentFiles);
 
@@ -595,6 +604,7 @@ public class Repository {
      * Exit with message if target commit would overwrite the untracked files.
      *
      * @param targetCommit Commit SHA1 id
+     * @param currentFiles Array of File instances
      */
     private void checkUntracked(Commit targetCommit, File[] currentFiles) {
         Map<String, String> currentFilesMap = getFilesMap(currentFiles);
@@ -637,7 +647,7 @@ public class Repository {
         if (branchHeadFile.exists()) {
             exit("A branch with that name already exists.");
         }
-        changeBranchHead(branchHeadFile, HEADCommit.getId());
+        setBranchHeadCommit(branchHeadFile, HEADCommit.getId());
     }
 
     /**
@@ -664,6 +674,6 @@ public class Repository {
     public void reset(String commitId) {
         commitId = getActualCommitId(commitId);
         checkoutCommit(commitId);
-        changeBranchHead(currentBranch, commitId);
+        setBranchHeadCommit(currentBranch, commitId);
     }
 }

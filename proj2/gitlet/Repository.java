@@ -128,6 +128,8 @@ public class Repository {
      */
     public static void globalLog() {
         StringBuilder logBuilder = new StringBuilder();
+        // As the project spec goes, the runtime should be O(N) where N is the number of commits ever made.
+        // But here I choose to log the commits in the order of created date, which has a runtime of O(NlogN).
         forEachCommitInOrder(commit -> logBuilder.append(commit.getLog()).append("\n"));
         System.out.print(logBuilder);
     }
@@ -139,7 +141,7 @@ public class Repository {
      */
     public static void find(String message) {
         StringBuilder resultBuilder = new StringBuilder();
-        forEachCommitInOrder(commit -> {
+        forEachCommit(commit -> {
             if (commit.getMessage().equals(message)) {
                 resultBuilder.append(commit.getId()).append("\n");
             }
@@ -237,9 +239,30 @@ public class Repository {
      *
      * @param cb Function that accepts Commit as a single argument
      */
-    @SuppressWarnings("ConstantConditions")
     private static void forEachCommitInOrder(Consumer<Commit> cb) {
-        Queue<Commit> commitsQueue = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
+        Comparator<Commit> commitComparator = Comparator.comparing(Commit::getDate).reversed();
+        Queue<Commit> commitsPriorityQueue = new PriorityQueue<>(commitComparator);
+        forEachCommit(cb, commitsPriorityQueue);
+    }
+
+    /**
+     * Iterate all commits and execute callback function on each of them.
+     *
+     * @param cb Function that accepts Commit as a single argument
+     */
+    private static void forEachCommit(Consumer<Commit> cb) {
+        Queue<Commit> commitsQueue = new ArrayDeque<>();
+        forEachCommit(cb, commitsQueue);
+    }
+
+    /**
+     * Helper method to iterate all commits.
+     *
+     * @param cb                 Callback function executed on the current commit
+     * @param queueToHoldCommits New Queue instance to hold the commits while iterating
+     */
+    @SuppressWarnings("ConstantConditions")
+    private static void forEachCommit(Consumer<Commit> cb, Queue<Commit> queueToHoldCommits) {
         Set<String> checkedCommitIds = new HashSet<>();
 
         File[] branchHeadFiles = BRANCH_HEADS_DIR.listFiles();
@@ -252,13 +275,13 @@ public class Repository {
             }
             checkedCommitIds.add(branchHeadCommitId);
             Commit branchHeadCommit = Commit.fromFile(branchHeadCommitId);
-            commitsQueue.add(branchHeadCommit);
+            queueToHoldCommits.add(branchHeadCommit);
         }
 
         while (true) {
-            Commit latestCommit = commitsQueue.poll();
-            cb.accept(latestCommit);
-            String[] parentCommitIds = latestCommit.getParents();
+            Commit nextCommit = queueToHoldCommits.poll();
+            cb.accept(nextCommit);
+            String[] parentCommitIds = nextCommit.getParents();
             if (parentCommitIds.length == 0) {
                 break;
             }
@@ -268,7 +291,7 @@ public class Repository {
                 }
                 checkedCommitIds.add(parentCommitId);
                 Commit parentCommit = Commit.fromFile(parentCommitId);
-                commitsQueue.add(parentCommit);
+                queueToHoldCommits.add(parentCommit);
             }
         }
     }

@@ -16,6 +16,16 @@ import static gitlet.Utils.*;
 public class Repository {
 
     /**
+     * Default branch name.
+     */
+    private static final String DEFAULT_BRANCH_NAME = "master";
+
+    /**
+     * HEAD ref prefix.
+     */
+    private static final String HEAD_BRANCH_REF_PREFIX = "ref: refs/heads/";
+
+    /**
      * The current working directory.
      */
     private static final File CWD = new File(System.getProperty("user.dir"));
@@ -51,14 +61,9 @@ public class Repository {
     private static final File BRANCH_HEADS_DIR = join(REFS_DIR, "heads");
 
     /**
-     * Default branch name.
+     * Files in the current working directory.
      */
-    private static final String DEFAULT_BRANCH_NAME = "master";
-
-    /**
-     * HEAD ref prefix.
-     */
-    private static final String HEAD_BRANCH_REF_PREFIX = "ref: refs/heads/";
+    private static final File[] currentFiles = Objects.requireNonNull(CWD.listFiles(File::isFile));
 
     /**
      * The staging area instance. Initialized in the constructor.
@@ -234,7 +239,7 @@ public class Repository {
      */
     @SuppressWarnings("ConstantConditions")
     private static void forEachCommitInOrder(Consumer<Commit> cb) {
-        Queue<Commit> commitsToLog = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
+        Queue<Commit> commitsQueue = new PriorityQueue<>((a, b) -> b.getDate().compareTo(a.getDate()));
         Set<String> checkedCommitIds = new HashSet<>();
 
         File[] branchHeadFiles = BRANCH_HEADS_DIR.listFiles();
@@ -247,11 +252,11 @@ public class Repository {
             }
             checkedCommitIds.add(branchHeadCommitId);
             Commit branchHeadCommit = Commit.fromFile(branchHeadCommitId);
-            commitsToLog.add(branchHeadCommit);
+            commitsQueue.add(branchHeadCommit);
         }
 
         while (true) {
-            Commit latestCommit = commitsToLog.poll();
+            Commit latestCommit = commitsQueue.poll();
             cb.accept(latestCommit);
             String[] parentCommitIds = latestCommit.getParents();
             if (parentCommitIds.length == 0) {
@@ -263,7 +268,7 @@ public class Repository {
                 }
                 checkedCommitIds.add(parentCommitId);
                 Commit parentCommit = Commit.fromFile(parentCommitId);
-                commitsToLog.add(parentCommit);
+                commitsQueue.add(parentCommit);
             }
         }
     }
@@ -289,20 +294,9 @@ public class Repository {
      *
      * @return Map with file path as key and SHA1 id as value
      */
-    @SuppressWarnings("ConstantConditions")
     private static Map<String, String> getCurrentFilesMap() {
-        File[] currentFiles = CWD.listFiles(File::isFile);
-        return getFilesMap(currentFiles);
-    }
-
-    /**
-     * Get a Map of file paths and their SHA1 id.
-     *
-     * @return Map with file path as key and SHA1 id as value
-     */
-    private static Map<String, String> getFilesMap(File[] files) {
         Map<String, String> filesMap = new HashMap<>();
-        for (File file : files) {
+        for (File file : currentFiles) {
             String filePath = file.getPath();
             String blobId = Blob.generateId(file);
             filesMap.put(filePath, blobId);
@@ -568,6 +562,7 @@ public class Repository {
             exit("No need to checkout the current branch.");
         }
         Commit branchHeadCommit = getBranchHeadCommit(branchHeadFile);
+        checkUntracked(branchHeadCommit);
         checkoutCommit(branchHeadCommit);
         setCurrentBranch(branchName);
     }
@@ -575,23 +570,9 @@ public class Repository {
     /**
      * Checkout to specific commit.
      *
-     * @param commitId Commit SHA1 id
-     */
-    private void checkoutCommit(String commitId) {
-        Commit targetCommit = Commit.fromFile(commitId);
-        checkoutCommit(targetCommit);
-    }
-
-    /**
-     * Checkout to specific commit.
-     *
      * @param targetCommit Commit instance
      */
-    @SuppressWarnings("ConstantConditions")
     private void checkoutCommit(Commit targetCommit) {
-        File[] currentFiles = CWD.listFiles(File::isFile);
-        checkUntracked(targetCommit, currentFiles);
-
         stagingArea.clear();
         stagingArea.save();
         for (File file : currentFiles) {
@@ -604,10 +585,9 @@ public class Repository {
      * Exit with message if target commit would overwrite the untracked files.
      *
      * @param targetCommit Commit SHA1 id
-     * @param currentFiles Array of File instances
      */
-    private void checkUntracked(Commit targetCommit, File[] currentFiles) {
-        Map<String, String> currentFilesMap = getFilesMap(currentFiles);
+    private void checkUntracked(Commit targetCommit) {
+        Map<String, String> currentFilesMap = getCurrentFilesMap();
         Map<String, String> trackedFilesMap = HEADCommit.getTracked();
         Map<String, String> addedFilesMap = stagingArea.getAdded();
         Set<String> removedFilePathsSet = stagingArea.getRemoved();
@@ -673,7 +653,9 @@ public class Repository {
      */
     public void reset(String commitId) {
         commitId = getActualCommitId(commitId);
-        checkoutCommit(commitId);
+        Commit targetCommit = Commit.fromFile(commitId);
+        checkUntracked(targetCommit);
+        checkoutCommit(targetCommit);
         setBranchHeadCommit(currentBranch, commitId);
     }
 }

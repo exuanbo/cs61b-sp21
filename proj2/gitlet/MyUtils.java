@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.function.Supplier;
 
 import static gitlet.Utils.*;
 
@@ -13,6 +14,17 @@ import static gitlet.Utils.*;
  * @author Exuanbo
  */
 public class MyUtils {
+
+    /**
+     * Get a lazy initialized value.
+     *
+     * @param delegate Function to get the value
+     * @param <T>      Type of the value
+     * @return Lazy instance
+     */
+    public static <T> Lazy<T> lazy(Supplier<T> delegate) {
+        return new Lazy<>(delegate);
+    }
 
     /**
      * Create a directory from the File object.

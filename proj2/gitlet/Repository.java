@@ -63,12 +63,12 @@ public class Repository {
     /**
      * Files in the current working directory.
      */
-    private static final Lazy<File[]> currentFiles = Lazy.of(() -> CWD.listFiles(File::isFile));
+    private static final Lazy<File[]> currentFiles = lazy(() -> CWD.listFiles(File::isFile));
 
     /**
      * The current branch name.
      */
-    private final Lazy<String> currentBranch = Lazy.of(() -> {
+    private final Lazy<String> currentBranch = lazy(() -> {
         String HEADContent = readContentsAsString(HEAD);
         return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
     });
@@ -76,12 +76,12 @@ public class Repository {
     /**
      * The commit that HEAD points to.
      */
-    private final Lazy<Commit> HEADCommit = Lazy.of(() -> getBranchHeadCommit(currentBranch.get()));
+    private final Lazy<Commit> HEADCommit = lazy(() -> getBranchHeadCommit(currentBranch.get()));
 
     /**
      * The staging area instance. Initialized in the constructor.
      */
-    private final Lazy<StagingArea> stagingArea = Lazy.of(() -> {
+    private final Lazy<StagingArea> stagingArea = lazy(() -> {
         StagingArea s;
         if (INDEX.exists()) {
             s = StagingArea.fromFile();

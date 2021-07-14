@@ -10,17 +10,11 @@ import java.util.function.Supplier;
 public class Lazy<T> implements Supplier<T> {
 
     private volatile Supplier<T> delegate;
-
     private volatile boolean initialized;
-
     private T value;
 
     public Lazy(Supplier<T> delegate) {
         this.delegate = delegate;
-    }
-
-    public static <T> Lazy<T> of(Supplier<T> delegate) {
-        return new Lazy<>(delegate);
     }
 
     @Override

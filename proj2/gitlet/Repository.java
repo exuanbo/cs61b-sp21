@@ -551,20 +551,20 @@ public class Repository {
     /**
      * Checkout to branch.
      *
-     * @param branchName Name of the branch
+     * @param targetBranchName Name of the target branch
      */
-    public void checkoutBranch(String branchName) {
-        File branchHeadFile = getBranchHeadFile(branchName);
-        if (!branchHeadFile.exists()) {
+    public void checkoutBranch(String targetBranchName) {
+        File targetBranchHeadFile = getBranchHeadFile(targetBranchName);
+        if (!targetBranchHeadFile.exists()) {
             exit("No such branch exists.");
         }
-        if (branchName.equals(currentBranch)) {
+        if (targetBranchName.equals(currentBranch)) {
             exit("No need to checkout the current branch.");
         }
-        Commit branchHeadCommit = getBranchHeadCommit(branchHeadFile);
-        checkUntracked(branchHeadCommit);
-        checkoutCommit(branchHeadCommit);
-        setCurrentBranch(branchName);
+        Commit targetBranchHeadCommit = getBranchHeadCommit(targetBranchHeadFile);
+        checkUntracked(targetBranchHeadCommit);
+        checkoutCommit(targetBranchHeadCommit);
+        setCurrentBranch(targetBranchName);
     }
 
     /**
@@ -620,30 +620,30 @@ public class Repository {
     /**
      * Create a new branch.
      *
-     * @param branchName Name of the branch
+     * @param newBranchName Name of the new branch
      */
-    public void branch(String branchName) {
-        File branchHeadFile = getBranchHeadFile(branchName);
-        if (branchHeadFile.exists()) {
+    public void branch(String newBranchName) {
+        File newBranchHeadFile = getBranchHeadFile(newBranchName);
+        if (newBranchHeadFile.exists()) {
             exit("A branch with that name already exists.");
         }
-        setBranchHeadCommit(branchHeadFile, HEADCommit.getId());
+        setBranchHeadCommit(newBranchHeadFile, HEADCommit.getId());
     }
 
     /**
      * Delete the branch.
      *
-     * @param branchName Name of the branch
+     * @param targetBranchName Name of the target branch
      */
-    public void rmBranch(String branchName) {
-        File branchHeadFile = getBranchHeadFile(branchName);
-        if (!branchHeadFile.exists()) {
+    public void rmBranch(String targetBranchName) {
+        File targetBranchHeadFile = getBranchHeadFile(targetBranchName);
+        if (!targetBranchHeadFile.exists()) {
             exit("A branch with that name does not exist.");
         }
-        if (branchName.equals(currentBranch)) {
+        if (targetBranchName.equals(currentBranch)) {
             exit("Cannot remove the current branch.");
         }
-        rm(branchHeadFile);
+        rm(targetBranchHeadFile);
     }
 
     /**

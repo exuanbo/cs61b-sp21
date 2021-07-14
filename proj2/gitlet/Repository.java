@@ -63,33 +63,34 @@ public class Repository {
     /**
      * Files in the current working directory.
      */
-    private static final File[] currentFiles = Objects.requireNonNull(CWD.listFiles(File::isFile));
-
-    /**
-     * The staging area instance. Initialized in the constructor.
-     */
-    private final StagingArea stagingArea;
+    private static final Lazy<File[]> currentFiles = Lazy.of(() -> CWD.listFiles(File::isFile));
 
     /**
      * The current branch name.
      */
-    private final String currentBranch;
+    private final Lazy<String> currentBranch = Lazy.of(() -> {
+        String HEADContent = readContentsAsString(HEAD);
+        return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
+    });
 
     /**
      * The commit that HEAD points to.
      */
-    private final Commit HEADCommit;
+    private final Lazy<Commit> HEADCommit = Lazy.of(() -> getBranchHeadCommit(currentBranch.get()));
 
-    public Repository() {
+    /**
+     * The staging area instance. Initialized in the constructor.
+     */
+    private final Lazy<StagingArea> stagingArea = Lazy.of(() -> {
+        StagingArea s;
         if (INDEX.exists()) {
-            stagingArea = StagingArea.fromFile();
+            s = StagingArea.fromFile();
         } else {
-            stagingArea = new StagingArea();
+            s = new StagingArea();
         }
-        currentBranch = getCurrentBranch();
-        HEADCommit = getBranchHeadCommit(currentBranch);
-        stagingArea.setTracked(HEADCommit.getTracked());
-    }
+        s.setTracked(HEADCommit.get().getTracked());
+        return s;
+    });
 
     /**
      * Exit if the repository at the current working directory is not initialized.
@@ -150,16 +151,6 @@ public class Repository {
             exit("Found no commit with that message.");
         }
         System.out.print(resultBuilder);
-    }
-
-    /**
-     * Get current branch name from HEAD file.
-     *
-     * @return Name of the branch
-     */
-    private static String getCurrentBranch() {
-        String HEADContent = readContentsAsString(HEAD);
-        return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
     }
 
     /**
@@ -319,7 +310,7 @@ public class Repository {
      */
     private static Map<String, String> getCurrentFilesMap() {
         Map<String, String> filesMap = new HashMap<>();
-        for (File file : currentFiles) {
+        for (File file : currentFiles.get()) {
             String filePath = file.getPath();
             String blobId = Blob.generateId(file);
             filesMap.put(filePath, blobId);
@@ -403,8 +394,8 @@ public class Repository {
         if (!file.exists()) {
             exit("File does not exist.");
         }
-        if (stagingArea.addFile(file)) {
-            stagingArea.save();
+        if (stagingArea.get().addFile(file)) {
+            stagingArea.get().save();
         }
     }
 
@@ -414,14 +405,14 @@ public class Repository {
      * @param message Commit message
      */
     public void commit(String message) {
-        if (stagingArea.isClean()) {
+        if (stagingArea.get().isClean()) {
             exit("No changes added to the commit.");
         }
-        Map<String, String> newTrackedFilesMap = stagingArea.commit();
-        stagingArea.save();
-        Commit newCommit = new Commit(message, new String[]{HEADCommit.getId()}, newTrackedFilesMap);
+        Map<String, String> newTrackedFilesMap = stagingArea.get().commit();
+        stagingArea.get().save();
+        Commit newCommit = new Commit(message, new String[]{HEADCommit.get().getId()}, newTrackedFilesMap);
         newCommit.save();
-        setBranchHeadCommit(currentBranch, newCommit.getId());
+        setBranchHeadCommit(currentBranch.get(), newCommit.getId());
     }
 
     /**
@@ -431,8 +422,8 @@ public class Repository {
      */
     public void remove(String fileName) {
         File file = getFileFromCWD(fileName);
-        if (stagingArea.removeFile(file)) {
-            stagingArea.save();
+        if (stagingArea.get().removeFile(file)) {
+            stagingArea.get().save();
         } else {
             exit("No reason to remove the file.");
         }
@@ -443,7 +434,7 @@ public class Repository {
      */
     public void log() {
         StringBuilder logBuilder = new StringBuilder();
-        Commit currentCommit = HEADCommit;
+        Commit currentCommit = HEADCommit.get();
         while (true) {
             logBuilder.append(currentCommit.getLog()).append("\n");
             String[] parentCommitIds = currentCommit.getParents();
@@ -465,8 +456,8 @@ public class Repository {
 
         // branches
         statusBuilder.append("=== Branches ===").append("\n");
-        statusBuilder.append("*").append(currentBranch).append("\n");
-        String[] branchNames = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranch));
+        statusBuilder.append("*").append(currentBranch.get()).append("\n");
+        String[] branchNames = BRANCH_HEADS_DIR.list((dir, name) -> !name.equals(currentBranch.get()));
         Arrays.sort(branchNames);
         for (String branchName : branchNames) {
             statusBuilder.append(branchName).append("\n");
@@ -474,8 +465,8 @@ public class Repository {
         statusBuilder.append("\n");
         // end
 
-        Map<String, String> addedFilesMap = stagingArea.getAdded();
-        Set<String> removedFilePathsSet = stagingArea.getRemoved();
+        Map<String, String> addedFilesMap = stagingArea.get().getAdded();
+        Set<String> removedFilePathsSet = stagingArea.get().getRemoved();
 
         // staged files
         statusBuilder.append("=== Staged Files ===").append("\n");
@@ -495,7 +486,7 @@ public class Repository {
         Set<String> deletedNotStageFilePaths = new HashSet<>();
 
         Map<String, String> currentFilesMap = getCurrentFilesMap();
-        Map<String, String> trackedFilesMap = HEADCommit.getTracked();
+        Map<String, String> trackedFilesMap = HEADCommit.get().getTracked();
 
         trackedFilesMap.putAll(addedFilesMap);
         for (String filePath : removedFilePathsSet) {
@@ -552,7 +543,7 @@ public class Repository {
      */
     public void checkout(String fileName) {
         String filePath = getFileFromCWD(fileName).getPath();
-        if (!HEADCommit.restoreTracked(filePath)) {
+        if (!HEADCommit.get().restoreTracked(filePath)) {
             exit("File does not exist in that commit.");
         }
     }
@@ -581,7 +572,7 @@ public class Repository {
         if (!targetBranchHeadFile.exists()) {
             exit("No such branch exists.");
         }
-        if (targetBranchName.equals(currentBranch)) {
+        if (targetBranchName.equals(currentBranch.get())) {
             exit("No need to checkout the current branch.");
         }
         Commit targetBranchHeadCommit = getBranchHeadCommit(targetBranchHeadFile);
@@ -596,9 +587,9 @@ public class Repository {
      * @param targetCommit Commit instance
      */
     private void checkoutCommit(Commit targetCommit) {
-        stagingArea.clear();
-        stagingArea.save();
-        for (File file : currentFiles) {
+        stagingArea.get().clear();
+        stagingArea.get().save();
+        for (File file : currentFiles.get()) {
             rm(file);
         }
         targetCommit.restoreAllTracked();
@@ -611,9 +602,9 @@ public class Repository {
      */
     private void checkUntracked(Commit targetCommit) {
         Map<String, String> currentFilesMap = getCurrentFilesMap();
-        Map<String, String> trackedFilesMap = HEADCommit.getTracked();
-        Map<String, String> addedFilesMap = stagingArea.getAdded();
-        Set<String> removedFilePathsSet = stagingArea.getRemoved();
+        Map<String, String> trackedFilesMap = HEADCommit.get().getTracked();
+        Map<String, String> addedFilesMap = stagingArea.get().getAdded();
+        Set<String> removedFilePathsSet = stagingArea.get().getRemoved();
 
         List<String> untrackedFilePaths = new ArrayList<>();
 
@@ -650,7 +641,7 @@ public class Repository {
         if (newBranchHeadFile.exists()) {
             exit("A branch with that name already exists.");
         }
-        setBranchHeadCommit(newBranchHeadFile, HEADCommit.getId());
+        setBranchHeadCommit(newBranchHeadFile, HEADCommit.get().getId());
     }
 
     /**
@@ -663,7 +654,7 @@ public class Repository {
         if (!targetBranchHeadFile.exists()) {
             exit("A branch with that name does not exist.");
         }
-        if (targetBranchName.equals(currentBranch)) {
+        if (targetBranchName.equals(currentBranch.get())) {
             exit("Cannot remove the current branch.");
         }
         rm(targetBranchHeadFile);
@@ -679,6 +670,6 @@ public class Repository {
         Commit targetCommit = Commit.fromFile(commitId);
         checkUntracked(targetCommit);
         checkoutCommit(targetCommit);
-        setBranchHeadCommit(currentBranch, commitId);
+        setBranchHeadCommit(currentBranch.get(), commitId);
     }
 }

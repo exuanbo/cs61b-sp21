@@ -768,7 +768,7 @@ public class Repository {
 
         boolean hasConflict = false;
 
-        Map<String, String> HEADCommitTrackedFilesMap = HEADCommit.get().getTracked();
+        Map<String, String> HEADCommitTrackedFilesMap = new HashMap<>(HEADCommit.get().getTracked());
         Map<String, String> targetBranchHeadCommitTrackedFilesMap = targetBranchHeadCommit.getTracked();
         Map<String, String> lcaCommitTrackedFilesMap = lcaCommit.getTracked();
 

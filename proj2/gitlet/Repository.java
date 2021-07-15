@@ -269,8 +269,8 @@ public class Repository {
         while (true) {
             Commit nextCommit = queueToHoldCommits.poll();
             cb.accept(nextCommit);
-            String[] parentCommitIds = nextCommit.getParents();
-            if (parentCommitIds.length == 0) {
+            List<String> parentCommitIds = nextCommit.getParents();
+            if (parentCommitIds.size() == 0) {
                 break;
             }
             for (String parentCommitId : parentCommitIds) {
@@ -394,7 +394,7 @@ public class Repository {
         Set<String> checkedCommitIds = new HashSet<>();
         while (true) {
             Commit latestCommit = commitsQueue.poll();
-            String[] parentCommitIds = latestCommit.getParents();
+            List<String> parentCommitIds = latestCommit.getParents();
             for (String parentCommitId : parentCommitIds) {
                 Commit parentCommit = Commit.fromFile(parentCommitId);
                 if (checkedCommitIds.contains(parentCommitId)) {
@@ -456,7 +456,7 @@ public class Repository {
     /**
      * Perform a commit with message and two parents.
      *
-     * @param msg      Commit message
+     * @param msg          Commit message
      * @param secondParent Second parent Commit SHA1 id
      */
     private void commit(String msg, String secondParent) {
@@ -465,9 +465,11 @@ public class Repository {
         }
         Map<String, String> newTrackedFilesMap = stagingArea.get().commit();
         stagingArea.get().save();
-        String[] parents = secondParent == null
-            ? new String[]{HEADCommit.get().getId()}
-            : new String[]{HEADCommit.get().getId(), secondParent};
+        List<String> parents = new ArrayList<>();
+        parents.add(HEADCommit.get().getId());
+        if (secondParent != null) {
+            parents.add(secondParent);
+        }
         Commit newCommit = new Commit(msg, parents, newTrackedFilesMap);
         newCommit.save();
         setBranchHeadCommit(currentBranch.get(), newCommit.getId());
@@ -495,11 +497,11 @@ public class Repository {
         Commit currentCommit = HEADCommit.get();
         while (true) {
             logBuilder.append(currentCommit.getLog()).append("\n");
-            String[] parentCommitIds = currentCommit.getParents();
-            if (parentCommitIds.length == 0) {
+            List<String> parentCommitIds = currentCommit.getParents();
+            if (parentCommitIds.size() == 0) {
                 break;
             }
-            String firstParentCommitId = parentCommitIds[0];
+            String firstParentCommitId = parentCommitIds.get(0);
             currentCommit = Commit.fromFile(firstParentCommitId);
         }
         System.out.print(logBuilder);

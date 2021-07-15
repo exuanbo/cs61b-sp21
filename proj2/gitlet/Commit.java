@@ -31,7 +31,7 @@ public class Commit implements Serializable {
     /**
      * The parent commits SHA1 id.
      */
-    private final String[] parents;
+    private final List<String> parents;
 
     /**
      * The tracked files Map with file path as key and SHA1 id as value.
@@ -48,7 +48,7 @@ public class Commit implements Serializable {
      */
     private final File file;
 
-    public Commit(String message, String[] parents, Map<String, String> trackedFilesMap) {
+    public Commit(String message, List<String> parents, Map<String, String> trackedFilesMap) {
         date = new Date();
         this.message = message;
         this.parents = parents;
@@ -63,7 +63,7 @@ public class Commit implements Serializable {
     public Commit() {
         date = new Date(0);
         message = "initial commit";
-        parents = new String[0];
+        parents = new ArrayList<>();
         tracked = new HashMap<>();
         id = generateId();
         file = getObjectFile(id);
@@ -85,7 +85,7 @@ public class Commit implements Serializable {
      * @return SHA1 id
      */
     private String generateId() {
-        return sha1(getTimestamp(), message, Arrays.toString(parents), tracked.toString());
+        return sha1(getTimestamp(), message, parents.toString(), tracked.toString());
     }
 
     /**
@@ -129,7 +129,7 @@ public class Commit implements Serializable {
      *
      * @return Array of parent commit ids.
      */
-    public String[] getParents() {
+    public List<String> getParents() {
         return parents;
     }
 
@@ -185,7 +185,7 @@ public class Commit implements Serializable {
         StringBuilder logBuilder = new StringBuilder();
         logBuilder.append("===").append("\n");
         logBuilder.append("commit").append(" ").append(id).append("\n");
-        if (parents.length > 1) {
+        if (parents.size() > 1) {
             logBuilder.append("Merge:");
             for (String parent : parents) {
                 logBuilder.append(" ").append(parent, 0, 7);

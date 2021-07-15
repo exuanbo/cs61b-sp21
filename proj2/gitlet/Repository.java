@@ -439,7 +439,7 @@ public class Repository {
         if (!file.exists()) {
             exit("File does not exist.");
         }
-        if (stagingArea.get().addFile(file)) {
+        if (stagingArea.get().add(file)) {
             stagingArea.get().save();
         }
     }
@@ -482,7 +482,7 @@ public class Repository {
      */
     public void remove(String fileName) {
         File file = getFileFromCWD(fileName);
-        if (stagingArea.get().removeFile(file)) {
+        if (stagingArea.get().remove(file)) {
             stagingArea.get().save();
         } else {
             exit("No reason to remove the file.");
@@ -580,9 +580,9 @@ public class Repository {
             String fileName = Paths.get(filePath).getFileName().toString();
             statusBuilder.append(fileName);
             if (deletedNotStageFilePaths.contains(filePath)) {
-                statusBuilder.append(" (deleted)");
+                statusBuilder.append(" ").append("(deleted)");
             } else {
-                statusBuilder.append(" (modified)");
+                statusBuilder.append(" ").append("(modified)");
             }
             statusBuilder.append("\n");
         }
@@ -786,14 +786,14 @@ public class Repository {
                         if (HEADCommitBlobId.equals(blobId)) { // not modified in the current branch
                             // case 1
                             Blob.fromFile(targetBranchHeadCommitBlobId).writeContentToSource();
-                            stagingArea.get().addFile(file);
+                            stagingArea.get().add(file);
                         } else { // modified in the current branch
                             if (!HEADCommitBlobId.equals(targetBranchHeadCommitBlobId)) { // modified in different ways
                                 // case 8
                                 hasConflict = true;
                                 String conflictContent = getConflictContent(HEADCommitBlobId, targetBranchHeadCommitBlobId);
                                 writeContents(file, conflictContent);
-                                stagingArea.get().addFile(file);
+                                stagingArea.get().add(file);
                             } // else modified in the same ways
                             // case 3
                         }
@@ -802,7 +802,7 @@ public class Repository {
                         hasConflict = true;
                         String conflictContent = getConflictContent(null, targetBranchHeadCommitBlobId);
                         writeContents(file, conflictContent);
-                        stagingArea.get().addFile(file);
+                        stagingArea.get().add(file);
                     }
                 } // else not modified in the target branch
                 // case 2, case 7
@@ -810,13 +810,13 @@ public class Repository {
                 if (HEADCommitBlobId != null) { // exists in the current branch
                     if (HEADCommitBlobId.equals(blobId)) { // not modified in the current branch
                         // case 6
-                        stagingArea.get().removeFile(file);
+                        stagingArea.get().remove(file);
                     } else { // modified in the current branch
                         // case 8
                         hasConflict = true;
                         String conflictContent = getConflictContent(HEADCommitBlobId, null);
                         writeContents(file, conflictContent);
-                        stagingArea.get().addFile(file);
+                        stagingArea.get().add(file);
                     }
                 } // else deleted in both branches
                 // case 3
@@ -839,17 +839,17 @@ public class Repository {
                     hasConflict = true;
                     String conflictContent = getConflictContent(HEADCommitBlobId, targetBranchHeadCommitBlobId);
                     writeContents(targetBranchHeadCommitFile, conflictContent);
-                    stagingArea.get().addFile(targetBranchHeadCommitFile);
+                    stagingArea.get().add(targetBranchHeadCommitFile);
                 } // else modified in the same ways
                 // case 3
             } else { // only added in the target branch
                 // case 5
                 Blob.fromFile(targetBranchHeadCommitBlobId).writeContentToSource();
-                stagingArea.get().addFile(targetBranchHeadCommitFile);
+                stagingArea.get().add(targetBranchHeadCommitFile);
             }
         }
 
-        String newCommitMessage = "Merged " + targetBranchName + " into " + currentBranch.get() + ".";
+        String newCommitMessage = "Merged" + " " + targetBranchName + " " + "into" + " " + currentBranch.get() + ".";
         commit(newCommitMessage, targetBranchHeadCommit.getId());
 
         if (hasConflict) {

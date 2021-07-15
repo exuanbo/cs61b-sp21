@@ -43,12 +43,10 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * Set tracked files.
-     *
-     * @param filesMap Map with file path as key and SHA1 id as value.
+     * Save this instance to the file INDEX.
      */
-    public void setTracked(Map<String, String> filesMap) {
-        tracked = filesMap;
+    public void save() {
+        writeObject(Repository.INDEX, this);
     }
 
     /**
@@ -70,10 +68,12 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * Save this instance to the file INDEX.
+     * Set tracked files.
+     *
+     * @param filesMap Map with file path as key and SHA1 id as value.
      */
-    public void save() {
-        writeObject(Repository.INDEX, this);
+    public void setTracked(Map<String, String> filesMap) {
+        tracked = filesMap;
     }
 
     /**
@@ -114,7 +114,7 @@ public class StagingArea implements Serializable {
      * @param file File instance
      * @return true if the staging area is changed
      */
-    public boolean addFile(File file) {
+    public boolean add(File file) {
         String filePath = file.getPath();
 
         Blob blob = new Blob(file);
@@ -147,7 +147,7 @@ public class StagingArea implements Serializable {
      * @param file File instance
      * @return true if the staging area is changed
      */
-    public boolean removeFile(File file) {
+    public boolean remove(File file) {
         String filePath = file.getPath();
 
         String addedBlobId = added.remove(filePath);

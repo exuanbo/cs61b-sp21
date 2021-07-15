@@ -74,6 +74,15 @@ public class Blob implements Serializable, Dumpable {
     }
 
     /**
+     * Get the blob content as String.
+     *
+     * @return Blob content
+     */
+    public String getContentAsString() {
+        return new String(content, StandardCharsets.UTF_8);
+    }
+
+    /**
      * Write the file content back to the source file.
      */
     public void writeContentToSource() {

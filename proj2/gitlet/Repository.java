@@ -385,6 +385,57 @@ public class Repository {
     }
 
     /**
+     * Get the id of the latest common ancestor of the two commits.
+     *
+     * @param commitA Commit instance
+     * @param commitB Commit instance
+     * @return Commit SHA1 id
+     */
+    @SuppressWarnings("ConstantConditions")
+    private static Commit getLatestCommonAncestorCommit(Commit commitA, Commit commitB) {
+        Comparator<Commit> commitComparator = Comparator.comparing(Commit::getDate).reversed();
+        Queue<Commit> commitsQueue = new PriorityQueue<>(commitComparator);
+        commitsQueue.add(commitA);
+        commitsQueue.add(commitB);
+        Set<String> checkedCommitIds = new HashSet<>();
+        while (true) {
+            Commit latestCommit = commitsQueue.poll();
+            String[] parentCommitIds = latestCommit.getParents();
+            for (String parentCommitId : parentCommitIds) {
+                Commit parentCommit = Commit.fromFile(parentCommitId);
+                if (checkedCommitIds.contains(parentCommitId)) {
+                    return parentCommit;
+                }
+                commitsQueue.add(parentCommit);
+                checkedCommitIds.add(parentCommitId);
+            }
+        }
+    }
+
+    /**
+     * Merge the conflicted blob content and return a new String.
+     *
+     * @param currentBlobId Current Blob SHA1 id
+     * @param targetBlobId  Target Blob SHA1 id
+     * @return New content
+     */
+    private static String getConflictContent(String currentBlobId, String targetBlobId) {
+        StringBuilder contentBuilder = new StringBuilder();
+        contentBuilder.append("<<<<<<< HEAD").append("\n");
+        if (currentBlobId != null) {
+            Blob currentBlob = Blob.fromFile(currentBlobId);
+            contentBuilder.append(currentBlob.getContentAsString());
+        }
+        contentBuilder.append("=======").append("\n");
+        if (targetBlobId != null) {
+            Blob targetBlob = Blob.fromFile(targetBlobId);
+            contentBuilder.append(targetBlob.getContentAsString());
+        }
+        contentBuilder.append(">>>>>>>");
+        return contentBuilder.toString();
+    }
+
+    /**
      * Add file to the staging area.
      *
      * @param fileName Name of the file
@@ -405,12 +456,25 @@ public class Repository {
      * @param message Commit message
      */
     public void commit(String message) {
+        commit(message, null);
+    }
+
+    /**
+     * Perform a commit with message and two parents.
+     *
+     * @param message      Commit message
+     * @param secondParent Second parent Commit SHA1 id
+     */
+    private void commit(String message, String secondParent) {
         if (stagingArea.get().isClean()) {
             exit("No changes added to the commit.");
         }
         Map<String, String> newTrackedFilesMap = stagingArea.get().commit();
         stagingArea.get().save();
-        Commit newCommit = new Commit(message, new String[]{HEADCommit.get().getId()}, newTrackedFilesMap);
+        String[] parents = secondParent == null
+            ? new String[]{HEADCommit.get().getId()}
+            : new String[]{HEADCommit.get().getId(), secondParent};
+        Commit newCommit = new Commit(message, parents, newTrackedFilesMap);
         newCommit.save();
         setBranchHeadCommit(currentBranch.get(), newCommit.getId());
     }
@@ -671,5 +735,127 @@ public class Repository {
         checkUntracked(targetCommit);
         checkoutCommit(targetCommit);
         setBranchHeadCommit(currentBranch.get(), commitId);
+    }
+
+    /**
+     * Merge branch.
+     *
+     * @param targetBranchName Name of the target branch
+     */
+    public void merge(String targetBranchName) {
+        File targetBranchHeadFile = getBranchHeadFile(targetBranchName);
+        if (!targetBranchHeadFile.exists()) {
+            exit("A branch with that name does not exist.");
+        }
+        if (targetBranchName.equals(currentBranch.get())) {
+            exit("Cannot merge a branch with itself.");
+        }
+        if (!stagingArea.get().isClean()) {
+            exit("You have uncommitted changes.");
+        }
+        Commit targetBranchHeadCommit = getBranchHeadCommit(targetBranchHeadFile);
+        checkUntracked(targetBranchHeadCommit);
+
+        Commit lcaCommit = getLatestCommonAncestorCommit(HEADCommit.get(), targetBranchHeadCommit);
+        String lcaCommitId = lcaCommit.getId();
+
+        if (lcaCommitId.equals(targetBranchHeadCommit.getId())) {
+            exit("Given branch is an ancestor of the current branch.");
+        }
+        if (lcaCommitId.equals(HEADCommit.get().getId())) {
+            checkoutCommit(targetBranchHeadCommit);
+            setCurrentBranch(targetBranchName);
+            exit("Current branch fast-forwarded.");
+        }
+
+        boolean hasConflict = false;
+
+        Map<String, String> HEADCommitTrackedFilesMap = HEADCommit.get().getTracked();
+        Map<String, String> targetBranchHeadCommitTrackedFilesMap = targetBranchHeadCommit.getTracked();
+        Map<String, String> lcaCommitTrackedFilesMap = lcaCommit.getTracked();
+
+        for (Map.Entry<String, String> entry : lcaCommitTrackedFilesMap.entrySet()) {
+            String filePath = entry.getKey();
+            File file = new File(filePath);
+            String blobId = entry.getValue();
+
+            String targetBranchHeadCommitBlobId = targetBranchHeadCommitTrackedFilesMap.get(filePath);
+            String HEADCommitBlobId = HEADCommitTrackedFilesMap.get(filePath);
+
+            if (targetBranchHeadCommitBlobId != null) { // exists in the target branch
+                if (!targetBranchHeadCommitBlobId.equals(blobId)) { // modified in the target branch
+                    if (HEADCommitBlobId != null) { // exists in the current branch
+                        if (HEADCommitBlobId.equals(blobId)) { // not modified in the current branch
+                            // case 1
+                            Blob.fromFile(targetBranchHeadCommitBlobId).writeContentToSource();
+                            stagingArea.get().addFile(file);
+                        } else { // modified in the current branch
+                            if (!HEADCommitBlobId.equals(targetBranchHeadCommitBlobId)) { // modified in different ways
+                                // case 8
+                                hasConflict = true;
+                                String conflictContent = getConflictContent(HEADCommitBlobId, targetBranchHeadCommitBlobId);
+                                writeContents(file, conflictContent);
+                                stagingArea.get().addFile(file);
+                            } // else modified in the same ways
+                            // case 3
+                        }
+                    } else { // deleted in current branch
+                        // case 8
+                        hasConflict = true;
+                        String conflictContent = getConflictContent(null, targetBranchHeadCommitBlobId);
+                        writeContents(file, conflictContent);
+                        stagingArea.get().addFile(file);
+                    }
+                } // else not modified in the target branch
+                // case 2, case 7
+            } else { // deleted in the target branch
+                if (HEADCommitBlobId != null) { // exists in the current branch
+                    if (HEADCommitBlobId.equals(blobId)) { // not modified in the current branch
+                        // case 6
+                        stagingArea.get().removeFile(file);
+                    } else { // modified in the current branch
+                        // case 8
+                        hasConflict = true;
+                        String conflictContent = getConflictContent(HEADCommitBlobId, null);
+                        writeContents(file, conflictContent);
+                        stagingArea.get().addFile(file);
+                    }
+                } // else deleted in both branches
+                // case 3
+            }
+
+            HEADCommitTrackedFilesMap.remove(filePath);
+            targetBranchHeadCommitTrackedFilesMap.remove(filePath);
+        }
+
+        for (Map.Entry<String, String> entry : targetBranchHeadCommitTrackedFilesMap.entrySet()) {
+            String targetBranchHeadCommitFilePath = entry.getKey();
+            File targetBranchHeadCommitFile = new File(targetBranchHeadCommitFilePath);
+            String targetBranchHeadCommitBlobId = entry.getValue();
+
+            String HEADCommitBlobId = HEADCommitTrackedFilesMap.get(targetBranchHeadCommitFilePath);
+
+            if (HEADCommitBlobId != null) { // added in both branches
+                if (!HEADCommitBlobId.equals(targetBranchHeadCommitBlobId)) { // modified in different ways
+                    // case 8
+                    hasConflict = true;
+                    String conflictContent = getConflictContent(HEADCommitBlobId, targetBranchHeadCommitBlobId);
+                    writeContents(targetBranchHeadCommitFile, conflictContent);
+                    stagingArea.get().addFile(targetBranchHeadCommitFile);
+                } // else modified in the same ways
+                // case 3
+            } else { // only added in the target branch
+                // case 5
+                Blob.fromFile(targetBranchHeadCommitBlobId).writeContentToSource();
+                stagingArea.get().addFile(targetBranchHeadCommitFile);
+            }
+        }
+
+        String newCommitMessage = "Merged " + targetBranchName + " into " + currentBranch.get() + ".";
+        commit(newCommitMessage, targetBranchHeadCommit.getId());
+
+        if (hasConflict) {
+            message("Encountered a merge conflict.");
+        }
     }
 }

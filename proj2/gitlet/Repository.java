@@ -69,8 +69,8 @@ public class Repository {
      * The current branch name.
      */
     private final Lazy<String> currentBranch = lazy(() -> {
-        String HEADContent = readContentsAsString(HEAD);
-        return HEADContent.replace(HEAD_BRANCH_REF_PREFIX, "");
+        String HEADFileContent = readContentsAsString(HEAD);
+        return HEADFileContent.replace(HEAD_BRANCH_REF_PREFIX, "");
     });
 
     /**
@@ -82,12 +82,9 @@ public class Repository {
      * The staging area instance. Initialized in the constructor.
      */
     private final Lazy<StagingArea> stagingArea = lazy(() -> {
-        StagingArea s;
-        if (INDEX.exists()) {
-            s = StagingArea.fromFile();
-        } else {
-            s = new StagingArea();
-        }
+        StagingArea s = INDEX.exists()
+            ? StagingArea.fromFile()
+            : new StagingArea();
         s.setTracked(HEADCommit.get().getTracked());
         return s;
     });
@@ -138,12 +135,12 @@ public class Repository {
     /**
      * Print all commits that have the exact message.
      *
-     * @param message Content of the message
+     * @param msg Content of the message
      */
-    public static void find(String message) {
+    public static void find(String msg) {
         StringBuilder resultBuilder = new StringBuilder();
         forEachCommit(commit -> {
-            if (commit.getMessage().equals(message)) {
+            if (commit.getMessage().equals(msg)) {
                 resultBuilder.append(commit.getId()).append("\n");
             }
         });
@@ -294,13 +291,9 @@ public class Repository {
      * @return File instance
      */
     private static File getFileFromCWD(String fileName) {
-        File file;
-        if (Paths.get(fileName).isAbsolute()) {
-            file = new File(fileName);
-        } else {
-            file = join(CWD, fileName);
-        }
-        return file;
+        return Paths.get(fileName).isAbsolute()
+            ? new File(fileName)
+            : join(CWD, fileName);
     }
 
     /**
@@ -360,10 +353,11 @@ public class Repository {
             if (!objectDir.exists()) {
                 exit("No commit with that id exists.");
             }
-            String objectFileNamePrefix = getObjectFileName(commitId);
+
             boolean isFound = false;
-            File[] objectFiles = objectDir.listFiles();
-            for (File objectFile : objectFiles) {
+            String objectFileNamePrefix = getObjectFileName(commitId);
+
+            for (File objectFile : objectDir.listFiles()) {
                 String objectFileName = objectFile.getName();
                 if (objectFileName.startsWith(objectFileNamePrefix) && isFileInstanceOf(objectFile, Commit.class)) {
                     if (isFound) {
@@ -453,19 +447,19 @@ public class Repository {
     /**
      * Perform a commit with message.
      *
-     * @param message Commit message
+     * @param msg Commit message
      */
-    public void commit(String message) {
-        commit(message, null);
+    public void commit(String msg) {
+        commit(msg, null);
     }
 
     /**
      * Perform a commit with message and two parents.
      *
-     * @param message      Commit message
+     * @param msg      Commit message
      * @param secondParent Second parent Commit SHA1 id
      */
-    private void commit(String message, String secondParent) {
+    private void commit(String msg, String secondParent) {
         if (stagingArea.get().isClean()) {
             exit("No changes added to the commit.");
         }
@@ -474,7 +468,7 @@ public class Repository {
         String[] parents = secondParent == null
             ? new String[]{HEADCommit.get().getId()}
             : new String[]{HEADCommit.get().getId(), secondParent};
-        Commit newCommit = new Commit(message, parents, newTrackedFilesMap);
+        Commit newCommit = new Commit(msg, parents, newTrackedFilesMap);
         newCommit.save();
         setBranchHeadCommit(currentBranch.get(), newCommit.getId());
     }
@@ -560,7 +554,9 @@ public class Repository {
         for (Map.Entry<String, String> entry : trackedFilesMap.entrySet()) {
             String filePath = entry.getKey();
             String blobId = entry.getValue();
+
             String currentFileBlobId = currentFilesMap.get(filePath);
+
             if (currentFileBlobId != null) {
                 if (!currentFileBlobId.equals(blobId)) {
                     // 1. Tracked in the current commit, changed in the working directory, but not staged; or

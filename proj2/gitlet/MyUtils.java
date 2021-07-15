@@ -63,13 +63,13 @@ public class MyUtils {
      * Tells if the deserialized object instance of given class.
      *
      * @param file File instance
-     * @param c Target class
+     * @param c    Target class
      * @return true if is instance
      */
     public static boolean isFileInstanceOf(File file, Class<?> c) {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
             return c.isInstance(in.readObject());
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return false;
         }
     }

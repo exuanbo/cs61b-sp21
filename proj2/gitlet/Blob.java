@@ -14,7 +14,7 @@ import static gitlet.Utils.*;
  * @author Exuanbo
  */
 @SuppressWarnings("PrimitiveArrayArgumentToVarargsMethod")
-public class Blob implements Serializable, Dumpable {
+public class Blob implements Serializable {
 
     /**
      * The source file from constructor.
@@ -105,9 +105,5 @@ public class Blob implements Serializable, Dumpable {
      */
     public File getFile() {
         return file;
-    }
-
-    public void dump() {
-        System.out.printf("path: %s\ncontent: %s\n", source.getPath(), new String(content, StandardCharsets.UTF_8));
     }
 }

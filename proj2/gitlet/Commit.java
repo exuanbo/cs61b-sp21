@@ -16,7 +16,7 @@ import static gitlet.Utils.sha1;
  *
  * @author Exuanbo
  */
-public class Commit implements Serializable, Dumpable {
+public class Commit implements Serializable {
 
     /**
      * The created date.
@@ -195,9 +195,5 @@ public class Commit implements Serializable, Dumpable {
         logBuilder.append("Date:").append(" ").append(getTimestamp()).append("\n");
         logBuilder.append(message).append("\n");
         return logBuilder.toString();
-    }
-
-    public void dump() {
-        System.out.println(getLog() + tracked);
     }
 }

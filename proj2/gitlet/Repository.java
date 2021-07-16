@@ -395,14 +395,13 @@ public class Repository {
         while (true) {
             Commit latestCommit = commitsQueue.poll();
             List<String> parentCommitIds = latestCommit.getParents();
-            for (String parentCommitId : parentCommitIds) {
-                Commit parentCommit = Commit.fromFile(parentCommitId);
-                if (checkedCommitIds.contains(parentCommitId)) {
-                    return parentCommit;
-                }
-                commitsQueue.add(parentCommit);
-                checkedCommitIds.add(parentCommitId);
+            String firstParentCommitId = parentCommitIds.get(0);
+            Commit firstParentCommit = Commit.fromFile(firstParentCommitId);
+            if (checkedCommitIds.contains(firstParentCommitId)) {
+                return firstParentCommit;
             }
+            commitsQueue.add(firstParentCommit);
+            checkedCommitIds.add(firstParentCommitId);
         }
     }
 

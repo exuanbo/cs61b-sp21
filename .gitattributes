@@ -1,0 +1,24 @@
+* linguist-vendored
+
+# labs
+lab7/bstmap/BSTMap.java -linguist-vendored
+lab8/hashmap/MyHashMap.java -linguist-vendored
+
+# projects
+proj0/game2048/Model.java -linguist-vendored
+proj0/game2048/TestLeftOnly.java -linguist-vendored
+
+proj1/deque/ArrayDeque.java -linguist-vendored
+proj1/deque/ArrayDequeTest.java -linguist-vendored
+proj1/deque/Deque.java -linguist-vendored
+proj1/deque/LinkedListDeque.java -linguist-vendored
+proj1/deque/MaxArrayDeque.java -linguist-vendored
+proj1/deque/MaxArrayDequeTest.java -linguist-vendored
+
+proj2/gitlet/Blob.java -linguist-vendored
+proj2/gitlet/Commit.java -linguist-vendored
+proj2/gitlet/Lazy.java -linguist-vendored
+proj2/gitlet/Main.java -linguist-vendored
+proj2/gitlet/MyUtils.java -linguist-vendored
+proj2/gitlet/Repository.java -linguist-vendored
+proj2/gitlet/StagingArea.java -linguist-vendored
